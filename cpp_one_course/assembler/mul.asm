@@ -59,12 +59,6 @@ mul_long_long:
 .loop_frist: ; for(rdi)
                 push            rsi
 
-;                push            rax
-;                mov             rax, r8
-;                lea             rax, [rax * 8]
-;                add             rsi, rax
-;                pop             rax
-
                 mov             r9, 0
 .loop_second:; for(rsi)
 ; begin body cycle
@@ -123,11 +117,8 @@ add_long_short_with_shift:
                 push            r8
                 push            rdx
 
-                xor             rdx,rdx
                 sub             rcx, r8
-                mov             rdx, r8
-                lea             rdx, [rdx * 8]
-                add             rbx, rdx
+                lea             rbx, [rbx + r8*8]
                 xor             rdx, rdx
 .loop:
                 add             [rbx], rax

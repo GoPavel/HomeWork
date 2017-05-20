@@ -13,7 +13,6 @@ _start:
                 lea             rsi, [rsp + 128 * 8]
 ;   push rsi[]
 ;   push rdi[]
-;                call            add_long_long
                 call            sub_long_long
                 call            write_long
 
