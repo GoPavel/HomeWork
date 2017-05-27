@@ -15,7 +15,7 @@ public:
 
     big_integer& operator+=(big_integer const& other); /*TODO*/
     big_integer& operator-=(big_integer const& other); 
-	big_integer& operator*=(int a);
+	big_integer& operator*=(uint32_t a);
 	big_integer& operator*=(big_integer const& other); /*TODO*/
     big_integer& operator/=(big_integer const& other); /*TODO*/
     big_integer& operator%=(big_integer const& other); /*TODO*/
@@ -48,9 +48,11 @@ public:
 private:
 	uint32_t const setted_one = 0xFFFFFFFF, setted_zero = 0x00000000;
 	void normalize();
-	bool is_negative() const;
+	bool is_negative;
 	std::vector<uint32_t> data;
+	void update_negative();
 	void resize(uint32_t a);
+	big_integer& add_with_shift(big_integer const &a, uint32_t shift);
 	int compare(big_integer const& other) const; // a - b ? 0
 	big_integer abs() const;
 	int compare_prefix(big_integer const& other, size_t begin_index);
