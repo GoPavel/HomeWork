@@ -7,7 +7,7 @@ public:
     big_integer(); /*TODO*/
     big_integer(big_integer const&); /*TODO*/
     big_integer(int); /*TODO*/
-    explicit big_integer(std::string const& str); /*TODO*/ 
+	explicit big_integer(std::string const& str); /*TODO*/ 
     ~big_integer();/*TODO*/
 
     big_integer& operator= (big_integer const& other); /*TODO*/ //Copy Constructor
@@ -44,7 +44,9 @@ public:
     friend bool operator<=(big_integer const& a, big_integer const& b);
     friend bool operator>=(big_integer const& a, big_integer const& b);
 
-    friend std::string to_string(big_integer const& a); /*TODO*/
+	friend std::string to_string(big_integer const& a); /*TODO*/
+	std::pair<big_integer, big_integer>
+		quotient_and_remainder(big_integer const& b) const;
 private:
 	uint32_t const setted_one = 0xFFFFFFFF, setted_zero = 0x00000000;
 	void normalize();
@@ -56,8 +58,7 @@ private:
 	int compare(big_integer const& other) const; // a - b ? 0
 	big_integer abs() const;
 	int compare_prefix(big_integer const& other, size_t begin_index);
-	std::pair<big_integer, big_integer>
-		quotient_and_remainder(big_integer const& b) const;
+	static big_integer uint64_to_big_integer(uint64_t a);
 //	int normalize_divisor(big_integer& a);
 //	uint32_t try_div(big_integer const& a, big_integer const& b);
 };

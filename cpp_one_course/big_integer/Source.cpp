@@ -4,6 +4,7 @@
 
 using namespace std;
 
+
 int main() {
 	/*big_integer a("72057594037927936"), b("4294967296");
 	a += 1;
@@ -66,5 +67,8 @@ int main() {
 	a++;
 	----a;
 	++++a;
+	a = 6, b = 3;
+	pair<big_integer, big_integer> pr = a.quotient_and_remainder(b);
+	
 	return 0;
 }
