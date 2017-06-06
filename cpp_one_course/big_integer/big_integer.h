@@ -1,20 +1,19 @@
 #ifndef BIG_INTEGER_H
 #define BIG_INTEGER_H
 #include<vector>
+#include<string>
 
 class big_integer {
 public:
     big_integer(); /*TODO*/
     big_integer(big_integer const&); /*TODO*/
     big_integer(int); /*TODO*/
-	explicit big_integer(std::string const& str); /*TODO*/ 
-    ~big_integer();/*TODO*/
-
+	explicit big_integer(std::string const& str); /*TODO*/
+    
     big_integer& operator= (big_integer const& other); /*TODO*/ //Copy Constructor
-	void swap(big_integer& other);
 
     big_integer& operator+=(big_integer const& other); /*TODO*/
-    big_integer& operator-=(big_integer const& other); 
+    big_integer& operator-=(big_integer const& other);
 	big_integer& operator*=(uint32_t a);
 	big_integer& operator*=(big_integer const& other); /*TODO*/
     big_integer& operator/=(big_integer const& other); /*TODO*/
@@ -83,6 +82,6 @@ bool operator<=(big_integer const& a, big_integer const& b);
 bool operator>=(big_integer const& a, big_integer const& b);
 
 std::string to_string(big_integer const& a);
-std::ostream& operator<<(std::ostream& s, big_integer const& a);
+//std::ostream& operator<<(std::ostream& s, big_integer const& a);
 
 #endif //BIG_INTEGER_H
