@@ -17,9 +17,12 @@ big_integer::big_integer(std::string const &str): big_integer(0) {
         big_int_is_negative = true;
         i++;
     }
-    for (size_t i = 0; i < str.size(); i++) {
+    for (; i < str.size(); i++) {
         (*this) *= 10;
         (*this) += int(str[i] - '0');
+    }
+    if (big_int_is_negative) {
+       (*this) = -(*this);
     }
 }
 
@@ -228,22 +231,29 @@ void big_integer::resize(uint32_t new_size) {
 
 big_integer& big_integer::add_with_shift(big_integer const &other, uint32_t shift){
     big_integer temp = (*this);
-    uint32_t r = 0, cnt_other = other.data.size();
-    temp.resize(((shift + cnt_other + 1) < (temp.data.size() + 1)) ?
-                (temp.data.size() + 1) :  shift + cnt_other + 1);
-    for (size_t i = 0; i < cnt_other; ++i) {
-        temp.data[shift + i] += other.data[i] + r;
-        if (temp.data[shift + i] < other.data[i] || (r && temp.data[i + shift] == other.data[i]))
+    uint32_t r = 0, cnt_other = other.data.size(), i = 0, buf;
+    temp.resize(std::max(temp.data.size(), other.data.size()) + 1);
+    for(;i < cnt_other; i++) {
+        buf = temp.data[shift + i] + other.data[i] + r;
+        if (buf < temp.data[shift + i] || (r && temp.data[i + shift] == buf))
             r = 1;
         else r = 0;
+        temp.data[shift + i] = buf;
     }
-    if (other.is_negative)
-        temp.data[cnt_other + shift] += setted_one + r;
-    else temp.data[cnt_other + shift] += setted_zero + r;
+    for(;i + shift < temp.data.size(); i++) {
+        if(other.is_negative) {
+            buf = temp.data[i + shift] + setted_one + r;
+        } else buf = temp.data[i + shift] + setted_zero + r;
+        if (buf < temp.data[shift + i] || (r && temp.data[i + shift] == buf))
+            r = 1;
+        else r = 0;
+        temp.data[shift + i] = buf;
+    }
     temp.update_negative();
     temp.normalize();
     return (*this) = temp;
 }
+
 
 int big_integer::compare(big_integer const& other) const { // a - b ? 0
     if (is_negative && !other.is_negative)
