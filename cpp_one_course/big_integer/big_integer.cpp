@@ -48,7 +48,7 @@ big_integer& big_integer::operator*=(uint32_t a) {
     for (size_t i = 0; i < data.size(); i++) {
         buf = 1ULL * data[i] * a + r;
         data[i] = buf & (mask_last32);
-        r = (buf & (~mask_last32)) >> 32;
+        r = buf >> 32;
     }
     if (res_is_negative)
         *this = -(*this);
@@ -73,11 +73,9 @@ big_integer& big_integer::operator%=(big_integer const& other) {
     return (*this) = quotient_and_remainder(other).second;
 }
 
-
-
 big_integer& big_integer::operator&=(big_integer const& other) {
     resize(other.data.size() + 1);
-    for (size_t i = 0; i < data.size(); i++) {
+    for (size_t i = 0; i < other.data.size(); i++) {
         data[i] &= other.data[i];
     }
     data.back() &= (other.is_negative? setted_one: setted_zero);
@@ -88,7 +86,7 @@ big_integer& big_integer::operator&=(big_integer const& other) {
 
 big_integer& big_integer::operator|=(big_integer const& other) {
     resize(other.data.size() + 1);
-    for (size_t i = 0; i < data.size(); i++) {
+    for (size_t i = 0; i < other.data.size(); i++) {
         data[i] |= other.data[i];
     }
     data.back() |= (other.is_negative? setted_one: setted_zero);
@@ -99,7 +97,7 @@ big_integer& big_integer::operator|=(big_integer const& other) {
 
 big_integer& big_integer::operator^=(big_integer const& other) {
     resize(other.data.size() + 1);
-    for (size_t i = 0; i < data.size(); i++) {
+    for (size_t i = 0; i < other.data.size(); i++) {
         data[i] ^= other.data[i];
     }
     data.back() ^= (other.is_negative? setted_one: setted_zero);
@@ -156,7 +154,6 @@ big_integer& big_integer::operator<<=(int size_shift) {
     return *this;
 }
 
-
 big_integer big_integer::operator+() const {
     return *this;
 }
@@ -197,6 +194,7 @@ big_integer big_integer::operator--(int) {
     return temp;
 }
 
+big_integer::big_integer(std::vector<uint32_t> vec): data(vec), is_negative(false) {}
 
 void big_integer::normalize() {
     if (is_negative)
@@ -231,29 +229,24 @@ void big_integer::resize(uint32_t new_size) {
 
 big_integer& big_integer::add_with_shift(big_integer const &other, uint32_t shift){
     big_integer temp = (*this);
-    uint32_t r = 0, cnt_other = other.data.size(), i = 0, buf;
-    temp.resize(std::max(temp.data.size(), other.data.size()) + 1);
+    uint32_t cnt_other = other.data.size(), i = 0; uint64_t buf, r = 0;
+    temp.resize(std::max(temp.data.size(), other.data.size() + shift) + 1);
     for(;i < cnt_other; i++) {
-        buf = temp.data[shift + i] + other.data[i] + r;
-        if (buf < temp.data[shift + i] || (r && temp.data[i + shift] == buf))
-            r = 1;
-        else r = 0;
+        buf = r + temp.data[shift + i] + other.data[i];
+        r = buf >> 32;
         temp.data[shift + i] = buf;
     }
     for(;i + shift < temp.data.size(); i++) {
         if(other.is_negative) {
-            buf = temp.data[i + shift] + setted_one + r;
-        } else buf = temp.data[i + shift] + setted_zero + r;
-        if (buf < temp.data[shift + i] || (r && temp.data[i + shift] == buf))
-            r = 1;
-        else r = 0;
+            buf = r + temp.data[i + shift] + setted_one;
+        } else buf = r + temp.data[i + shift] + setted_zero;
+        r = buf >> 32;
         temp.data[shift + i] = buf;
     }
     temp.update_negative();
     temp.normalize();
     return (*this) = temp;
 }
-
 
 int big_integer::compare(big_integer const& other) const { // a - b ? 0
     if (is_negative && !other.is_negative)
@@ -297,85 +290,131 @@ int big_integer::compare_prefix(big_integer const& other, size_t begin_index) {
     return flag_cmp;
 }
 
+std::pair<big_integer, uint32_t>
+big_integer::quotient_and_remainder_for_short_divisor(uint32_t b) const {
+    bool res_is_negative = this->is_negative;
+    big_integer a = this->abs();
+    int32_t large_index = a.data.size() - 1;
+    uint32_t remainder = 0, shift = 0;
+    uint64_t pre_a, dig_q;
+    std::vector<uint32_t> quotient_vector;
+    while(large_index > -1) {
+        shift = 0;
+        pre_a = a.data[large_index];
+        if (pre_a < b && large_index == 0) {
+            remainder = a.data[large_index];
+            break;
+        }
+        if (pre_a < b) {
+            shift = 1;
+            pre_a <<= 32;
+            pre_a += a.data[large_index -1];
+        }
+        dig_q = pre_a / b;
+        quotient_vector.push_back(uint32_t(dig_q));
+        a.add_with_shift(-uint64_to_big_integer(dig_q * b), large_index - shift);
+        while(large_index > 0 && a.data[large_index] == 0) {
+            large_index--;
+        }
+    }
+    for (size_t i = 0; i < quotient_vector.size() / 2; i++) {
+        std::swap(quotient_vector[i], quotient_vector[quotient_vector.size() - 1 -i]);
+    }
+    big_integer quotient(quotient_vector);
+    return std::make_pair(quotient, remainder);
+}
+
 std::pair<big_integer, big_integer>
 big_integer::quotient_and_remainder(big_integer const& B) const {
-//    bool res_is_negative = (this->is_negative ^ B.is_negative);
-//    big_integer a = this->abs(), b = B.abs(), temp;
-//    std::vector<uint32_t> Q;
-    /*if (a < b)*/ return std::make_pair(0, 0);
-//    int ind_large_word_a = a.data.size() - 1, shift = 0;
-//    big_integer quotien, remainder;
-//    if (a.data.size() < 3 && b.data.size() < 3) {
-//        uint64_t aa = 0, bb = 0;
-//        for (size_t i = 0; i < a.data.size(); i++) {
-//            aa <<= 32;
-//            aa += a.data[i];
-//        }
-//        for (size_t i = 0; i < b.data.size(); i++) {
-//            bb <<= 32;
-//            bb += a.data[i];
-//        }
-//        uint64_t q = aa / bb, r = aa % bb;
-//        return std::make_pair(uint64_to_big_integer(q), uint64_to_big_integer(r));
-//    }
-//    while (true) {
-//        shift = 0;
-//        int cmp = a.compare_prefix(b, ind_large_word_a);
-//        if (cmp < 0) {
-//            shift = 1;
-//        }
-//        else if (cmp == 666) {
-//            remainder = a;
-//            break;
-//        }
-//        uint64_t pre_a = a.data[ind_large_word_a - 1] + (a.data[ind_large_word_a] << 32),
-//            pre_b = (shift == 0 ?
-//            (b.data[b.data.size() - 1] << 32) + b.data[b.data.size() - 2]
-//                : b.data[data.size() - 1]);
-//                uint32_t try_number = pre_a / pre_b;
-//                temp = (b *= try_number);
-//                while (true) {
-//                    cmp = a.compare_prefix(temp, ind_large_word_a);
-//                    if (cmp < 0)
-//                        break;
-//                    else {
-//                        temp -= b;
-//                        try_number--;
-//                    }
-//                }
-//                Q.push_back(try_number);
-//                temp = -temp;
-//                a.add_with_shift(temp, ind_large_word_a - temp.data.size() -1 -shift);
-//                while (ind_large_word_a >= 0  && a.data[ind_large_word_a] == 0)
-//                    ind_large_word_a--;
-//    }
-//    quotien = big_integer(Q.back());
-//    quotien.normalize();
-//    remainder.normalize();
-//    for (size_t i = Q.size() - 1; i--;)
-//        quotien.data.push_back(Q[i]);
-//    if (res_is_negative) {
-//        quotien.is_negative = true;
-//        quotien = -quotien;
-//        remainder = b - remainder;
-//    }
-//    else {
-//        quotien.is_negative = false;
-//    }
-//    return std::make_pair(quotien, remainder);
-//}
+    assert(B != 0);
+    bool res_is_negative = (this->is_negative ^ B.is_negative);
+    big_integer a = this->abs(), b = B.abs();
+    std::vector<uint32_t> Q;
+    if (a == 0) return std::make_pair(0, 0);
+    if (a < b) return std::make_pair(0, a);
+    big_integer quotient, remainder;
+    if (b.data.size() < 2) {
+        std::pair<big_integer, uint32_t> temp = a.quotient_and_remainder_for_short_divisor( b.data[0]);
+        quotient = temp.first;
+        remainder = big_integer(temp.second);
+    //}
+    // if (a.data.size() < 3 && b.data.size() < 3) {
+    //     uint64_t aa = 0, bb = 0;
+    //     for (size_t i = 0; i < a.data.size(); i++) {
+    //         aa <<= 32;
+    //         aa += a.data[i];
+    //     }
+    //     for (size_t i = 0; i < b.data.size(); i++) {
+    //            bb <<= 32;
+    //            bb += b.data[i];
+    //     }
+    //     uint64_t q = aa / bb, r = aa % bb;
+    //     quotien = uint64_to_big_integer(q);
+    //     remainder = uint64_to_big_integer(r);
+    } else {
+        int ind_large_word_a = a.data.size() - 1, shift = 0;
+        big_integer temp;
+        while (true) {
+        shift = 0;
+        int cmp = a.compare_prefix(b, ind_large_word_a);
+        if (cmp < 0) {
+            shift = 1;
+        }
+        else if (cmp == 666) {
+            remainder = a;
+            break;
+        }
+        uint64_t pre_a = a.data[ind_large_word_a - 1] + (a.data[ind_large_word_a] << 32),
+            pre_b = (shift == 0 ?
+            (b.data[b.data.size() - 1] << 32) + b.data[b.data.size() - 2]
+                : b.data[data.size() - 1]);
+                uint32_t try_number = pre_a / pre_b;
+                temp = (b *= try_number);
+                while (true) {
+                    cmp = a.compare_prefix(temp, ind_large_word_a);
+                    if (cmp < 0)
+                        break;
+                    else {
+                       temp -= b;
+                       try_number--;
+                   }
+               }
+               Q.push_back(try_number);
+               temp = -temp;
+               a.add_with_shift(temp, ind_large_word_a - temp.data.size() -1 -shift);
+               while (ind_large_word_a >= 0  && a.data[ind_large_word_a] == 0)
+                   ind_large_word_a--;
+        }
+        quotient = big_integer(Q.back());
+        quotient.normalize();
+        remainder.normalize();
+        for (size_t i = Q.size() - 1; i--;)
+            quotient.data.push_back(Q[i]);
+   }
+   if (res_is_negative) {
+       quotient = -quotient;
+   }
+   else {
+       quotient.is_negative = false;
+   }
+   if (this->is_negative) {
+       remainder = -remainder;
+   }
+   return std::make_pair(quotient, remainder);
+}
 
-//big_integer big_integer::uint64_to_big_integer(uint64_t a) {
-//    big_integer temp;
-//    if (a > (1ULL << 32)) {
-//        temp.data.push_back(((a << 32) >> 32));
-//        temp.data.push_back(a >> 32);
-//    }
-//    else {
-//        temp.data.push_back(a);
-//    }
-//    temp.is_negative = true;
-//    return temp;
+big_integer big_integer::uint64_to_big_integer(uint64_t a) {
+   big_integer temp;
+   if (a > (1ULL << 32)) {
+       temp += uint32_t(a >> 32);
+       temp <<= 32;
+       temp += uint32_t(a);
+   }
+   else {
+       temp +=uint32_t(a);
+   }
+   temp.is_negative = false;
+   return temp;
 }
 
 //pre a > 0
@@ -390,7 +429,6 @@ big_integer::quotient_and_remainder(big_integer const& B) const {
 //	}
 //	return shift;
 //}
-
 
 big_integer operator+(big_integer a, big_integer const& b) {
     return a += b;
@@ -412,7 +450,6 @@ big_integer operator%(big_integer a, big_integer const& b) {
     return a %= b;
 }
 
-
 big_integer operator&(big_integer a, big_integer const& b) {
     return a &= b;
 }
@@ -432,7 +469,6 @@ big_integer operator<<(big_integer a, int b) {
 big_integer operator>>(big_integer a, int b) {
     return a >>= b;
 }
-
 
 bool operator==(big_integer const& a, big_integer const& b) {
     return a.compare(b) == 0;

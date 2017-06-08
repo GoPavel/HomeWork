@@ -1,39 +1,41 @@
 #ifndef BIG_INTEGER_H
 #define BIG_INTEGER_H
 #include<vector>
+#include<algorithm>
 #include<string>
+#include<cassert>
 
 class big_integer {
 public:
-    big_integer(); /*TODO*/
-    big_integer(big_integer const&); /*TODO*/
-    big_integer(int); /*TODO*/
-	explicit big_integer(std::string const& str); /*TODO*/
-    
-    big_integer& operator= (big_integer const& other); /*TODO*/ //Copy Constructor
+    big_integer();
+    big_integer(big_integer const&);
+    big_integer(int);
+	explicit big_integer(std::string const& str);
 
-    big_integer& operator+=(big_integer const& other); /*TODO*/
+    big_integer& operator= (big_integer const& other); //Copy Constructor
+
+    big_integer& operator+=(big_integer const& other);
     big_integer& operator-=(big_integer const& other);
 	big_integer& operator*=(uint32_t a);
-	big_integer& operator*=(big_integer const& other); /*TODO*/
-    big_integer& operator/=(big_integer const& other); /*TODO*/
-    big_integer& operator%=(big_integer const& other); /*TODO*/
+	big_integer& operator*=(big_integer const& other);
+    big_integer& operator/=(big_integer const& other);
+    big_integer& operator%=(big_integer const& other);
 
-    big_integer& operator&=(big_integer const& other); /*TODO*/
-    big_integer& operator|=(big_integer const& other); /*TODO*/
-    big_integer& operator^=(big_integer const& other); /*TODO*/
+    big_integer& operator&=(big_integer const& other);
+    big_integer& operator|=(big_integer const& other);
+    big_integer& operator^=(big_integer const& other);
 
-    big_integer& operator>>=(int size_shift); /*TODO*/ // if size_shift < 0 AB
-    big_integer& operator<<=(int size_shift); /*TODO*/ // if size_shift < 0 AB
+    big_integer& operator>>=(int size_shift);  // if size_shift < 0 AB
+    big_integer& operator<<=(int size_shift);  // if size_shift < 0 AB
 
     big_integer operator+() const; //NB why?
-    big_integer operator-() const; /*TODO*/
-    big_integer operator~() const; /*TODO*/
+    big_integer operator-() const;
+    big_integer operator~() const;
 
-    big_integer& operator++(); /*TODO*/// pref
+    big_integer& operator++(); // pref
     big_integer operator++(int); // post
 
-    big_integer& operator--(); /*TODO*/// pref
+    big_integer& operator--(); // pref
     big_integer operator--(int); // post
 
     friend bool operator==(big_integer const& a, big_integer const& b);
@@ -43,10 +45,13 @@ public:
     friend bool operator<=(big_integer const& a, big_integer const& b);
     friend bool operator>=(big_integer const& a, big_integer const& b);
 
-	friend std::string to_string(big_integer const& a); /*TODO*/
-	std::pair<big_integer, big_integer>
-		quotient_and_remainder(big_integer const& b) const;
+	friend std::string to_string(big_integer const& a);
 private:
+    std::pair<big_integer, big_integer>
+        quotient_and_remainder(big_integer const& b) const;
+    std::pair<big_integer, uint32_t>
+        quotient_and_remainder_for_short_divisor(uint32_t b) const;
+    big_integer(std::vector<uint32_t> vec);
 	uint32_t const setted_one = 0xFFFFFFFF, setted_zero = 0x00000000;
 	void normalize();
 	bool is_negative;
