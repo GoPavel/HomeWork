@@ -1,5 +1,6 @@
 #ifndef BIG_INTEGER_H
 #define BIG_INTEGER_H
+#define NDEBUG
 #include<vector>
 #include<algorithm>
 #include<string>
@@ -10,13 +11,13 @@ public:
     big_integer();
     big_integer(big_integer const&);
     big_integer(int);
+    big_integer(uint32_t);
 	explicit big_integer(std::string const& str);
 
     big_integer& operator= (big_integer const& other); //Copy Constructor
 
     big_integer& operator+=(big_integer const& other);
     big_integer& operator-=(big_integer const& other);
-	big_integer& operator*=(uint32_t a);
 	big_integer& operator*=(big_integer const& other);
     big_integer& operator/=(big_integer const& other);
     big_integer& operator%=(big_integer const& other);
@@ -47,12 +48,13 @@ public:
 
 	friend std::string to_string(big_integer const& a);
 private:
+    big_integer& mul_short(uint32_t a);
     std::pair<big_integer, big_integer>
         quotient_and_remainder(big_integer const& b) const;
     std::pair<big_integer, uint32_t>
-        quotient_and_remainder_for_short_divisor(uint32_t b) const;
+        quotient_and_remainder_for_short_unsigned_divisor(uint32_t b) const;
     big_integer(std::vector<uint32_t> vec);
-	uint32_t const setted_one = 0xFFFFFFFF, setted_zero = 0x00000000;
+    static uint32_t const setted_one = 0xFFFFFFFF, setted_zero = 0x00000000;
 	void normalize();
 	bool is_negative;
 	std::vector<uint32_t> data;
@@ -61,10 +63,8 @@ private:
 	big_integer& add_with_shift(big_integer const &a, uint32_t shift);
 	int compare(big_integer const& other) const; // a - b ? 0
 	big_integer abs() const;
-	int compare_prefix(big_integer const& other, size_t begin_index);
+    int compare_prefix(big_integer const& other, int32_t begin_index) const;
 	static big_integer uint64_to_big_integer(uint64_t a);
-//	int normalize_divisor(big_integer& a);
-//	uint32_t try_div(big_integer const& a, big_integer const& b);
 };
 
 big_integer operator+(big_integer a, big_integer const& b);
