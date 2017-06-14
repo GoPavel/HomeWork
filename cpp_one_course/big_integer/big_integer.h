@@ -48,18 +48,17 @@ public:
 
 	friend std::string to_string(big_integer const& a);
 private:
-    big_integer& mul_short(uint32_t a);
-    std::pair<big_integer, big_integer>
-        quotient_and_remainder(big_integer const& b) const;
-    std::pair<big_integer, uint32_t>
-        quotient_and_remainder_for_short_unsigned_divisor(uint32_t b) const;
+    big_integer& mul_short(uint32_t a); // why I can't make private operator*=
+    std::pair<big_integer, big_integer> quotient_and_remainder(big_integer const& b) const;
+    std::pair<big_integer, uint32_t> quotient_and_remainder_for_short_unsigned_divisor(uint32_t b);
     big_integer(std::vector<uint32_t> vec);
     static uint32_t const setted_one = 0xFFFFFFFF, setted_zero = 0x00000000;
-	void normalize();
+	big_integer& normalize();
 	bool is_negative;
 	std::vector<uint32_t> data;
 	void update_negative();
 	void resize(uint32_t a);
+    void invert();
 	big_integer& add_with_shift(big_integer const &a, uint32_t shift);
 	int compare(big_integer const& other) const; // a - b ? 0
 	big_integer abs() const;

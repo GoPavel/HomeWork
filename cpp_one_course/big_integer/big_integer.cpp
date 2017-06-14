@@ -39,19 +39,20 @@ big_integer& big_integer::operator=(big_integer const& other) {
 }
 
 big_integer& big_integer::operator+=(big_integer const& other) {
-    add_with_shift(other, 0);
+    add_with_shift(big_integer(other), 0);
     normalize();
     return (*this);
 }
 
 big_integer& big_integer::operator-=(big_integer const& other) {
-    return *this += (-other);
+    add_with_shift(-other, 0);
+    normalize();
+    return (*this);
 }
 
 big_integer& big_integer::mul_short(uint32_t a) {
     bool res_is_negative = is_negative;
-    *this = abs();
-    normalize();
+    //*this = abs();
     uint64_t buf, r = 0, mask_last32 = ((1ULL << 32) - 1);
     resize(data.size() + 1);
     for (size_t i = 0; i < data.size(); i++) {
@@ -68,7 +69,6 @@ big_integer& big_integer::mul_short(uint32_t a) {
 big_integer& big_integer::operator*=(big_integer const& other) {
     bool res_is_negative = ((is_negative) ^ (other.is_negative));
     big_integer sum(0), a = (*this).abs(), b = other.abs();
-    a.normalize(); b.normalize();
     for (size_t i = 0; i < b.data.size(); i++) {
         sum.add_with_shift(big_integer(a).mul_short(b.data[i]), i);
         sum.normalize();
@@ -175,18 +175,25 @@ big_integer big_integer::operator+() const {
 }
 
 big_integer big_integer::operator-() const {
-    big_integer temp = ~(*this);
-    return temp += 1;
+    big_integer temp = (*this);
+    temp.invert();
+    temp.add_with_shift(1, 0);
+    temp.normalize();
+    return temp;
+}
+
+void big_integer::invert() {
+    resize(data.size() + 1);
+    for (size_t i = 0; i < data.size(); i++) {
+        data[i] = ~data[i];
+    }
+    update_negative();
+    normalize();
 }
 
 big_integer big_integer::operator~() const {
     big_integer temp = *this;
-    temp.resize(temp.data.size() + 1);
-    for (size_t i = 0; i < temp.data.size(); i++) {
-        temp.data[i] = ~temp.data[i];
-    }
-    temp.update_negative();
-    temp.normalize();
+    temp.invert();
     return temp;
 }
 
@@ -217,7 +224,7 @@ big_integer::big_integer(std::vector<uint32_t> vec): data(vec), is_negative(fals
 // delete insignificant word
 //NB big_integer must have corret sign flag
 //NB big_integer after normalize have more, than nil word
-void big_integer::normalize() {
+big_integer& big_integer::normalize() {
     if (is_negative)
         for (int i = data.size() - 1; i > 0; i--) {
             if (data[i] == setted_one)
@@ -230,6 +237,7 @@ void big_integer::normalize() {
                 data.pop_back();
             else break;
         }
+    return (*this);
 }
 
 // NB big_integer must have insignificant digit
@@ -251,16 +259,16 @@ void big_integer::resize(uint32_t new_size) {
 
 // NB after this func haven't normalize
 big_integer& big_integer::add_with_shift(big_integer const &other, uint32_t shift) {
-    big_integer temp = other;
+    //big_integer temp = other;
     uint32_t i = 0; uint64_t buf, r = 0;
-    resize(std::max(data.size(), temp.data.size() + shift) + 1);
-    for(;i < temp.data.size(); i++) {
-        buf = r + data[shift + i] + temp.data[i]; // TODO? left sum earler right sum
+    resize(std::max(data.size(), other.data.size() + shift) + 1);
+    for(;i < other.data.size(); i++) {
+        buf = r + data[shift + i] + other.data[i]; // TODO? left sum earler right sum
         r = buf >> 32;
         data[shift + i] = buf;
     }
     for(;i + shift < data.size(); i++) {
-        if(temp.is_negative) {
+        if(other.is_negative) {
             buf = r + data[i + shift] + setted_one;
         } else buf = r + data[i + shift] + setted_zero;
         r = buf >> 32;
@@ -295,9 +303,9 @@ big_integer big_integer::abs() const {
 }
 
 std::pair<big_integer, uint32_t>
-big_integer::quotient_and_remainder_for_short_unsigned_divisor(uint32_t b) const {
+big_integer::quotient_and_remainder_for_short_unsigned_divisor(uint32_t b) {
     assert((*this) > 0);
-    big_integer a = (*this);
+    big_integer &a = (*this);
     int32_t shift = 2;
     a.data.push_back(0);
     uint64_t prefix_a; uint32_t digit_quotient;
@@ -323,12 +331,10 @@ big_integer::quotient_and_remainder_for_short_unsigned_divisor(uint32_t b) const
 
 // +1 -- me > other // -1  -- me < other // 0 -- me == other
 int big_integer::compare_prefix(big_integer const& other, int32_t end_index) const {
-    assert((*this) >= 0);
-    assert(other >= 0);
     int32_t len_prefix = data.size() - end_index;
     for (int32_t i = data.size() - 1, j = len_prefix-1; j >= 0 && i >= end_index ; --i, --j) {
         static uint32_t digit_other;
-        digit_other = (j >= other.data.size()? 0: other.data[j]);
+        digit_other = (j >= (int32_t)other.data.size()? 0: other.data[j]);
         if (data[i] > digit_other )
             return 1;
         if (data[i] < digit_other)
@@ -346,7 +352,7 @@ std::pair<big_integer, big_integer> big_integer::quotient_and_remainder(big_inte
     if (a == 0) {
         quotient = 0;
         remainder = 0;
-    } else if (a < b) {
+    } else if (a.data.size() < b.data.size()) {
         quotient = 0;
         remainder = a;
     } else if (b.data.size() < 2) {
@@ -357,8 +363,9 @@ std::pair<big_integer, big_integer> big_integer::quotient_and_remainder(big_inte
         big_integer subtraction;
         std::vector<uint32_t> quotient_vector;
         a.data.push_back(0);
-        int32_t large_word_index, len_prefix = b.data.size() + 1;
-        uint32_t  trial;
+        int32_t len_prefix = b.data.size() + 1;
+        uint32_t  trial, cnt = 0;
+        quotient_vector.reserve(a.data.size() - b.data.size() + 2);
         __uint128_t prefix_a, prefix_b = (__uint128_t(b.data[b.data.size() - 1]) << 32) | b.data[b.data.size() - 2];
         for (int32_t large_word_index = a.data.size() - 1; (large_word_index - (len_prefix-1)) >= 0; large_word_index--) {
             prefix_a = a.data[large_word_index];
@@ -368,7 +375,8 @@ std::pair<big_integer, big_integer> big_integer::quotient_and_remainder(big_inte
             prefix_a |= a.data[large_word_index -2];
             prefix_a /= prefix_b;
             trial = ((prefix_a >> 32) == 0 ? uint32_t(prefix_a) : setted_one);
-            subtraction = b * trial;
+            subtraction = b;
+            subtraction.mul_short(trial);
             while(a.compare_prefix(subtraction, large_word_index - (len_prefix-1)) < 0) {
                 subtraction -= b;
                 trial--;
