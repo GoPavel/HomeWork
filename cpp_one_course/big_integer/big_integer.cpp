@@ -31,7 +31,7 @@ big_integer::big_integer(std::string const &str): big_integer(0) {
        (*this) = -(*this);
     }
 }
-//
+
 big_integer& big_integer::operator=(big_integer const& other) {
     data = other.data;
     is_negative = other.is_negative;
@@ -121,8 +121,8 @@ big_integer& big_integer::operator^=(big_integer const& other) {
 
 big_integer& big_integer::operator>>=(int size_shift) {
     uint32_t cnt_deleted = size_shift / 32, r = size_shift % 32,
-        right_mask_nr = ((1 << (31 - r) << 1)) - 1, left_mask_r = ~right_mask_nr,
-        right_mask_r = ((1 << r) - 1), left_mask_nr = ~right_mask_r;
+        right_mask_nr = ((1u << (31 - r) << 1)) - 1, left_mask_r = ~right_mask_nr,
+        right_mask_r = ((1u << r) - 1), left_mask_nr = ~right_mask_r;
     if (cnt_deleted >= data.size()) return (*this) = (is_negative? -1: 0);
     data[0] = (data[cnt_deleted] & left_mask_nr) >> r;
     for (size_t i = cnt_deleted+1, right, left; i < data.size(); i++) {
@@ -150,8 +150,8 @@ big_integer& big_integer::operator>>=(int size_shift) {
 
 big_integer& big_integer::operator<<=(int size_shift) {
     uint32_t cnt_setted = size_shift / 32, r = size_shift % 32,
-        right_mask_nr = ((1 << (31 - r) << 1))-1, left_mask_r = ~right_mask_nr,
-        right_mask_r = ((1 << r) - 1), left_mask_nr = ~right_mask_r;
+        right_mask_nr = ((1u << (31 - r) << 1))-1, left_mask_r = ~right_mask_nr,
+        right_mask_r = ((1u << r) - 1), left_mask_nr = ~right_mask_r;
     uint32_t index_old_end = data.size()-1;
     resize(data.size() + cnt_setted + 1);
     uint32_t left, right;
@@ -364,7 +364,7 @@ std::pair<big_integer, big_integer> big_integer::quotient_and_remainder(big_inte
         std::vector<uint32_t> quotient_vector;
         a.data.push_back(0);
         int32_t len_prefix = b.data.size() + 1;
-        uint32_t  trial, cnt = 0;
+        uint32_t  trial;
         quotient_vector.reserve(a.data.size() - b.data.size() + 2);
         __uint128_t prefix_a, prefix_b = (__uint128_t(b.data[b.data.size() - 1]) << 32) | b.data[b.data.size() - 2];
         for (int32_t large_word_index = a.data.size() - 1; (large_word_index - (len_prefix-1)) >= 0; large_word_index--) {
