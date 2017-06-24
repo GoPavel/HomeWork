@@ -19,3 +19,7 @@ if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
 endif()
 
 target_link_libraries(big_integer_testing -lpthread)
+
+# можно оптимизировать: избавиться от проверок на small/big если пере изменением
+# унифицировать объект или использовать итераторы для обращения к нужной памяти
+# таже можно заинлайнить горячие функции, но приносит не значительно
