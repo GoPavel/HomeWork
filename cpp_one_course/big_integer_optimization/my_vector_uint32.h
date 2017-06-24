@@ -11,7 +11,7 @@ struct shared_vector {
 };
 
 class my_vector_uint32 {
-    static const uint32_t size_small = 25;
+    static const uint32_t size_small = 5;
 public:
     my_vector_uint32();
     my_vector_uint32(my_vector_uint32 const& other);
