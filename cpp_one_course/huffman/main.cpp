@@ -5,7 +5,7 @@
 
 using namespace std;
 
-static const uint32_t max_size_block = 4;
+static const uint32_t max_size_block = 640;
 
 int main () {
     ifstream in("intest.txt", ios::in | ios::binary);
@@ -20,23 +20,34 @@ int main () {
         freq_det.add_block(block, (uint32_t)in.gcount());
     }
 
-    cout << freq_det.to_string() << endl;
+//    cout << freq_det.to_string() << endl;
 
     encoder enc(freq_det);
+//    cout << enc.to_string_tree() << endl;
 
     vector<uint8_t> code_tree = enc.encode_tree();
+//    cout << "\n";
+//    for (uint32_t i = 0; i < code_tree.size(); ++i) {
+//        cout << (int)code_tree[i] << " ";
+//    }
+//    cout << "\n";
     out.write((char *)code_tree.data(), code_tree.size());
 
     in.clear();
     in.seekg(0);
 
     std::vector<uint8_t> encode_block;
+    int i = 0;
     while(in) {
         in.read((char *)block, max_size_block);
         encode_block = enc.encode_block(block, (uint32_t)in.gcount());
-        out.write((char *)encode_block.data(), encode_block.size());
+//        cout << "Block#" << i++ << "\n";
+//        for(uint32_t i = 0; i < encode_block.size(); ++i) {
+//            cout << (int)encode_block[i] << " ";
+//        }
+//        cout << "\n";
+         out.write((char *)encode_block.data(), encode_block.size());
     }
-
 
     return 0;
 }

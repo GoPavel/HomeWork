@@ -61,6 +61,21 @@ std::string encoder::to_string_tree() {
 
 //return  <steps|lists>
 // we'll know cnt lists, when build tree
+
+void convert_bool_to_byte(std::vector<uint8_t> &a, std::vector<bool> &b){
+    while(b.size() % 8 != 0)
+        b.push_back(0);
+    for(uint32_t i = 0; i < (b.size() / 8); i++){
+        static uint8_t buf;
+        buf = 0;
+        for(uint32_t j = 0; j < 8; ++j) {
+            buf |= (b[i * 8 + j] << j);
+        }
+        a.push_back(buf);
+    }
+    return;
+}
+
 std::vector<uint8_t> encoder::encode_tree() {
     std::vector<bool> steps; // 0 -- D, 1 -- U
     std::vector<uint8_t> sym_of_lists;
@@ -86,22 +101,8 @@ std::vector<uint8_t> encoder::encode_tree() {
             }
         }
     }
-    steps.push_back(true);
-    while(steps.size() % 8 != 0) {
-        steps.push_back(false);
-    }
-
     std::vector<uint8_t> result_code;
-    uint32_t buf = 0;
-    for(uint32_t i = 0; i < steps.size(); ++i) {
-        buf <<= 1;
-        buf += steps[i];
-        if (i % 8 == 7) {
-            result_code.push_back(buf);
-            buf = 0;
-        }
-    }
-
+    convert_bool_to_byte(result_code, steps);
     for(uint32_t i = 0; i < sym_of_lists.size(); ++i) {
         result_code.push_back(sym_of_lists[i]);
     }
@@ -109,14 +110,21 @@ std::vector<uint8_t> encoder::encode_tree() {
 }
 
 std::vector<uint8_t> encoder::encode_block(uint8_t const* block, const uint32_t size_block) {
-    std::vector<bool> bool_code;
+    std::vector<bool> bit_code;
     for(uint32_t i = 0; i < size_block; ++i) {
         std::vector<bool> &code_symbol = map_sym_to_code[block[i]];
-        for(uint32_t j = 0; j < code_symbol.size)(); ++j) {
-            bool_code.push_back(code_symbol[j]);
+        for(uint32_t j = 0; j < code_symbol.size(); ++j) {
+            bit_code.push_back(code_symbol[j]);
         }
     }
 
-    std::vector<uint8_t> byte_code;
+    std::vector<uint8_t> result_code;
     //TODO записать сайз и сам код
+    uint32_t s = bit_code.size();
+    for (int i = 0; i  < 4; i++) {
+        result_code.push_back(uint8_t(s));
+        s >>= 8;
+    }
+    convert_bool_to_byte(result_code, bit_code);
+    return result_code;
 }
