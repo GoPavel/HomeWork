@@ -1,5 +1,7 @@
 #include"huffman_lib.h"
 
+using namespace std;
+
 frequency_detector::frequency_detector(): freq(256) {}
 
 void frequency_detector::add_block(uint8_t const* block, const uint32_t size_block) {
@@ -9,13 +11,13 @@ void frequency_detector::add_block(uint8_t const* block, const uint32_t size_blo
     return;
 }
 
-std::string frequency_detector::to_string() {
-    std::string str = "";
+string frequency_detector::to_string() {
+    string str = "";
     for (uint32_t i = 0; i < 256; ++i) {
         if (freq[i]) {
             str += char(i);
             str += " => cnt = ";
-            str += std::to_string(freq[i]);
+            str += to_string(freq[i]);
             str += "\n";
         }
     }
