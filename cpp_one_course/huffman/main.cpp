@@ -32,17 +32,10 @@ int main (int argc, char *argv[]) {
                 in.read(reinterpret_cast<char *>(block), max_size_block);
                 freq_det.add_block(block, static_cast<uint32_t>(in.gcount()));
             }
-            //    cout << "> frequency: \n"<< freq_det.to_string() << endl;
 
             encoder enc(freq_det);
-            //    cout << "> tree \n" <<  enc.to_string_tree() << endl;
 
             vector<uint8_t> code_tree = enc.encode_tree();
-//                cout << "\n";
-//                for (uint32_t i = 0; i < code_tree.size(); ++i) {
-//                    cout << (int)code_tree[i] << " ";
-//                }
-//                cout << "\n";
             out.write(reinterpret_cast<char *>(code_tree.data()), code_tree.size());
 
             in.clear();
@@ -52,12 +45,6 @@ int main (int argc, char *argv[]) {
             while(in) {
                 in.read(reinterpret_cast<char *>(block), max_size_block);
                 encode_block = enc.encode_block(block, (uint32_t)in.gcount());
-//                    static int i = 0;
-//                    cout << "Block#" << i++ << "\n";
-//                    for(uint32_t i = 0; i < encode_block.size(); ++i) {
-//                        cout << (int)encode_block[i] << " ";
-//                    }
-//                    cout << "\n";
                  out.write(reinterpret_cast<char *>(encode_block.data()), encode_block.size());
             }
 
@@ -72,15 +59,6 @@ int main (int argc, char *argv[]) {
 
             uint32_t size_code_tree;
             uint8_t code_tree[1000];
-
-//            cout << "\n<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>\n"<< "Inside decode.txt:\n";
-//            while (in) {
-//                static uint8_t byte;
-//                in.read(reinterpret_cast<char *>(&byte), sizeof(uint8_t));
-//                if (in.gcount() != 0)
-//                    cout << (int)byte << " ";
-//            }
-//            cout << endl;
 
             in.clear();
             in.seekg(0);
@@ -99,13 +77,6 @@ int main (int argc, char *argv[]) {
                 memset(code_block, 0, bytesize_block);
                 in.read(reinterpret_cast<char *>(code_block), bytesize_block);
                 decode_block = dec.decode_block(code_block, bitsize_block);
-
-        //        static int i = 0;
-        //        cout << "Block#" << i++ << endl;
-        //        for (int i = 0; i < decode_block.size() ; ++i) {
-        //            cout << (char)decode_block[i] << " ";
-        //        }
-        //        cout << endl;
 
                 out.write(reinterpret_cast<char *>(decode_block.data()), decode_block.size());
             }
