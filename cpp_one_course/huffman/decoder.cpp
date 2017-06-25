@@ -65,6 +65,7 @@ decoder::decoder(uint8_t const* code_tree, uint32_t const size_code_tree) {
 
 vector<uint8_t> decoder::decode_block(uint8_t* code_block, const uint32_t bitsize_block) {
     vector<uint8_t> decode_block;
+    decode_block.reserve(bitsize_block/8);
     if (tree.size() == 1) {
         for (uint32_t i = 0; i < bitsize_block; ++i)
             decode_block.push_back(sym_of_node[0]);
