@@ -18,8 +18,7 @@ inline void convert_bool_to_byte(vector<uint8_t> &a, vector<bool> &b){
 
 inline void convert_uint32_to_byte(vector<uint8_t> &a, uint32_t b){
     for (int i = 0; i  < 4; i++) {
-        a.push_back(uint8_t(b));
-        b >>= 8;
+        a.push_back(uint8_t(b >> (8 * (3 - i))));
     }
 }
 

@@ -32,15 +32,15 @@ public:
     string to_string_tree();
     encoder(frequency_detector const& cnt);
     vector<uint8_t> encode_tree();
-    vector<uint8_t> encode_block(uint8_t const* block, const uint32_t size_block);
+    vector<uint8_t> encode_block(uint8_t const* block, const uint32_t bytesize_block);
 };
 
 class decoder {
     friend class Node;
     vector<Node> tree;
-    vector<uint8_t> sym;
+    vector<uint8_t> sym_of_node;
 public:
    decoder(uint8_t *byte_code, uint32_t size_code);
-//    vector<uint8_t> decode_block(uint8_t *code_block, uint8_t size_code);
+   vector<uint8_t> decode_block(uint8_t *code_block, uint8_t bitsize_code);
 };
 #endif
