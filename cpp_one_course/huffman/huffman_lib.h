@@ -3,6 +3,7 @@
 #include<vector>
 #include<cstdint>
 #include<string>
+#include<stdexcept>
 
 using namespace std;
 
@@ -16,15 +17,15 @@ public:
 };
 
 struct Node {
+    friend class encoder;
+    friend class decoder;
     int p, l, r;
 private:
-    Node(int _p, int _l, int _r):
-        p(_p), l(_l), r(_r) {}
+    Node(int _p, int _l, int _r): p(_p), l(_l), r(_r) {}
     Node(): p(-1), l(-1), r(-1) {}
 };
 
 class encoder {
-    friend class Node;
     vector<Node> tree; // <lists/some/root>
     vector<uint8_t> sym;
     vector<bool> map_sym_to_code[256];
@@ -36,11 +37,10 @@ public:
 };
 
 class decoder {
-    friend class Node;
     vector<Node> tree;
     vector<uint8_t> sym_of_node;
 public:
-   decoder(uint8_t *byte_code, uint32_t size_code);
-   vector<uint8_t> decode_block(uint8_t *code_block, uint8_t bitsize_code);
+   decoder(uint8_t const* byte_code, uint32_t const size_code);
+   vector<uint8_t> decode_block(uint8_t const* code_block, const uint32_t bitsize_code);
 };
 #endif

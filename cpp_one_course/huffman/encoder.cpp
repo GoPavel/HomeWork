@@ -3,7 +3,7 @@
 
 using namespace std;
 
-inline void convert_bool_to_byte(vector<uint8_t> &a, vector<bool> &b){
+inline void convert_bool_to_byte(vector<uint8_t>& a, vector<bool>& b){
     while(b.size() % 8 != 0)
     b.push_back(0);
     for(uint32_t i = 0; i < (b.size() / 8); i++){
@@ -17,8 +17,9 @@ inline void convert_bool_to_byte(vector<uint8_t> &a, vector<bool> &b){
 }
 
 inline void convert_uint32_to_byte(vector<uint8_t> &a, uint32_t b){
+    char *p = reinterpret_cast<char *>(&b);
     for (int i = 0; i  < 4; i++) {
-        a.push_back(uint8_t(b >> (8 * (3 - i))));
+        a.push_back(p[i]);
     }
 }
 
@@ -108,6 +109,7 @@ vector<uint8_t> encoder::encode_tree() {
             }
         }
     }
+    steps.push_back(true);
     vector<uint8_t> result_code;
     convert_uint32_to_byte(result_code, sym_of_lists.size() + (steps.size() + 7) / 8);
     convert_bool_to_byte(result_code, steps);

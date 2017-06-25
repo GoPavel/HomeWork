@@ -17,7 +17,7 @@ string frequency_detector::to_string() {
         if (freq[i]) {
             str += char(i);
             str += " => cnt = ";
-            str += to_string(freq[i]);
+            str += std::to_string(freq[i]);
             str += "\n";
         }
     }
