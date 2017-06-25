@@ -33,6 +33,13 @@ encoder::encoder(frequency_detector const& cnt) {
         }
     }
 
+    if (tree.size() == 0)
+        throw runtime_error("Input file is empty");
+    if (tree.size() == 1) {
+        is_trivially = true;
+        return;
+    } else is_trivially = false;
+
     pair<uint64_t, int> a, b;
     while(freq_to_node.size() > 1) {
         a = (*freq_to_node.begin());
@@ -43,7 +50,6 @@ encoder::encoder(frequency_detector const& cnt) {
         tree.push_back(Node(-1, a.second, b.second));
         tree[a.second].p = tree[b.second].p = (int)tree.size()-1;
     }
-
     int v = tree.size() -1;
     vector<bool> code;
     while(v != -1) {
@@ -64,9 +70,13 @@ encoder::encoder(frequency_detector const& cnt) {
             }
         }
     }
+    return;
 }
 
 string encoder::to_string_tree() {
+    if (is_trivially) {
+        return "Trivially";
+    }
     string res = "count vertex: ";
     res += to_string(tree.size());
     res += "\n vertex: v -> (p, l, r)\n";
@@ -99,6 +109,9 @@ vector<uint8_t> encoder::encode_tree() {
                 move = true;
             }
         } else {
+            if (tree[v].p == -1) {
+                break;
+            }
             if (v == tree[tree[v].p].l) {
                 v = tree[v].p;
                 v = tree[v].r;
@@ -119,17 +132,21 @@ vector<uint8_t> encoder::encode_tree() {
     return result_code;
 }
 
-vector<uint8_t> encoder::encode_block(uint8_t const* block, const uint32_t size_block) {
-    vector<bool> bit_code;
-    for(uint32_t i = 0; i < size_block; ++i) {
-        vector<bool> &code_symbol = map_sym_to_code[block[i]];
-        for(uint32_t j = 0; j < code_symbol.size(); ++j) {
-            bit_code.push_back(code_symbol[j]);
-        }
-    }
-
+vector<uint8_t> encoder::encode_block(uint8_t const* block, const uint32_t bytesize_block) {
     vector<uint8_t> result_code;
-    convert_uint32_to_byte(result_code, (uint32_t)bit_code.size());
-    convert_bool_to_byte(result_code, bit_code);
+    if (is_trivially) {
+        convert_uint32_to_byte(result_code, static_cast<uint32_t>(bytesize_block));
+    } else {
+        vector<bool> bit_code;
+        for(uint32_t i = 0; i < bytesize_block; ++i) {
+            vector<bool> &code_symbol = map_sym_to_code[block[i]];
+            for(uint32_t j = 0; j < code_symbol.size(); ++j) {
+                bit_code.push_back(code_symbol[j]);
+            }
+        }
+
+        convert_uint32_to_byte(result_code, (uint32_t)bit_code.size());
+        convert_bool_to_byte(result_code, bit_code);
+    }
     return result_code;
 }

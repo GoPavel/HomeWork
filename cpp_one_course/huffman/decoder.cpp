@@ -1,4 +1,4 @@
-#include"huffman_lib.h"
+#include "huffman_lib.h"
 
 using namespace std;
 
@@ -30,7 +30,6 @@ decoder::decoder(uint8_t const* code_tree, uint32_t const size_code_tree) {
         } else {
             if (tree[v].p == -1) {
                 break;
-//                throw  runtime_error("Building huffman's tree is impossible, garbage in file");
             }
             if(v == tree[tree[v].p].l) {
                 v = tree[v].p;
@@ -64,18 +63,23 @@ decoder::decoder(uint8_t const* code_tree, uint32_t const size_code_tree) {
     }
 }
 
-vector<uint8_t> decoder::decode_block(uint8_t const* code_block, const uint32_t bitsize_block) {
+vector<uint8_t> decoder::decode_block(uint8_t* code_block, const uint32_t bitsize_block) {
     vector<uint8_t> decode_block;
-    vector<bool> bitcode_block = convert_byte_to_bool(code_block, (bitsize_block + 7) / 8);
-    uint32_t v = 0;
-    for (uint32_t i = 0; i < bitsize_block; ++i) {
-        if (bitcode_block[i] == 0)
-            v = tree[v].l;
-        else
-            v = tree[v].r;
-        if (tree[v].l == -1) {
-            decode_block.push_back(sym_of_node[v]);
-            v = 0;
+    if (tree.size() == 1) {
+        for (uint32_t i = 0; i < bitsize_block; ++i)
+            decode_block.push_back(sym_of_node[0]);
+    } else {
+        vector<bool> bitcode_block = convert_byte_to_bool(code_block, (bitsize_block + 7) / 8);
+        uint32_t v = 0;
+        for (uint32_t i = 0; i < bitsize_block; ++i) {
+            if (bitcode_block[i] == 0)
+                v = tree[v].l;
+            else
+                v = tree[v].r;
+            if (tree[v].l == -1) {
+                decode_block.push_back(sym_of_node[v]);
+                v = 0;
+            }
         }
     }
     return decode_block;
