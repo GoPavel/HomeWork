@@ -30,6 +30,8 @@ int main (int argc, char *argv[]) {
             while(in) {
                 memset(block, 0, max_size_block);
                 in.read(reinterpret_cast<char *>(block), max_size_block);
+                if (in.gcount() == 0)
+                    break;
                 freq_det.add_block(block, static_cast<uint32_t>(in.gcount()));
             }
 
@@ -44,6 +46,8 @@ int main (int argc, char *argv[]) {
             std::vector<uint8_t> encode_block;
             while(in) {
                 in.read(reinterpret_cast<char *>(block), max_size_block);
+                if (in.gcount() == 0)
+                    break;
                 encode_block = enc.encode_block(block, (uint32_t)in.gcount());
                  out.write(reinterpret_cast<char *>(encode_block.data()), encode_block.size());
             }
@@ -64,7 +68,11 @@ int main (int argc, char *argv[]) {
             in.seekg(0);
 
             in.read(reinterpret_cast<char *>(&size_code_tree), sizeof(uint32_t));
+            if (in.gcount() == 0)
+                throw runtime_error("Error read");
             in.read(reinterpret_cast<char *>(code_tree), size_code_tree);
+            if (in.gcount() == 0)
+                throw runtime_error("Error read");
             decoder dec(code_tree, size_code_tree);
 
             uint32_t bitsize_block, bytesize_block;
@@ -76,6 +84,8 @@ int main (int argc, char *argv[]) {
                 bytesize_block = (bitsize_block + 7) / 8;
                 memset(code_block, 0, bytesize_block);
                 in.read(reinterpret_cast<char *>(code_block), bytesize_block);
+                if (in.gcount() == 0)
+                    throw runtime_error("Error read");
                 decode_block = dec.decode_block(code_block, bitsize_block);
 
                 out.write(reinterpret_cast<char *>(decode_block.data()), decode_block.size());
