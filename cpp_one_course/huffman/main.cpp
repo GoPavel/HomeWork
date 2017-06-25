@@ -64,11 +64,10 @@ int main (int argc, char *argv[]) {
             uint32_t size_code_tree;
             uint8_t code_tree[1000];
 
-            in.clear();
-            in.seekg(0);
-
             in.read(reinterpret_cast<char *>(&size_code_tree), sizeof(uint32_t));
             if (in.gcount() == 0)
+                throw runtime_error("Error read");
+            if (size_code_tree > 1000)
                 throw runtime_error("Error read");
             in.read(reinterpret_cast<char *>(code_tree), size_code_tree);
             if (in.gcount() == 0)
@@ -76,12 +75,16 @@ int main (int argc, char *argv[]) {
             decoder dec(code_tree, size_code_tree);
 
             uint32_t bitsize_block, bytesize_block;
-            uint8_t code_block[max_size_block + 8];
+            uint8_t* code_block;
             vector<uint8_t> decode_block;
+            int i = 0;
             while(in) {
                 if (in.read(reinterpret_cast<char *>(&bitsize_block), sizeof(uint32_t)).gcount() == 0)
                     break;
+                if (bitsize_block > max_size_block * 256)
+                    throw runtime_error("Error read");
                 bytesize_block = (bitsize_block + 7) / 8;
+                code_block = new uint8_t[bytesize_block];
                 memset(code_block, 0, bytesize_block);
                 in.read(reinterpret_cast<char *>(code_block), bytesize_block);
                 if (in.gcount() == 0)
@@ -89,6 +92,7 @@ int main (int argc, char *argv[]) {
                 decode_block = dec.decode_block(code_block, bitsize_block);
 
                 out.write(reinterpret_cast<char *>(decode_block.data()), decode_block.size());
+                delete[] code_block;
             }
         } else {
             throw runtime_error("Unkown command");
