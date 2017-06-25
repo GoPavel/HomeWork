@@ -77,7 +77,6 @@ int main (int argc, char *argv[]) {
             uint32_t bitsize_block, bytesize_block;
             uint8_t* code_block;
             vector<uint8_t> decode_block;
-            int i = 0;
             while(in) {
                 if (in.read(reinterpret_cast<char *>(&bitsize_block), sizeof(uint32_t)).gcount() == 0)
                     break;
