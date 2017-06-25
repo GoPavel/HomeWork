@@ -1,4 +1,4 @@
-#include"huffman_lib.h"
+#include"huffman_cod.h"
 #include<map>
 
 using namespace std;
