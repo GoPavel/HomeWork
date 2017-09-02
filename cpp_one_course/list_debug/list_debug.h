@@ -13,23 +13,14 @@ private:
     class node_base {
     public:
         node_base *next, *prev;
+        std::vector<const_iterator *> vec_iters;
 
-        node_base(): next(nullptr), prev(nullptr) {}
+        node_base(): next(nullptr), prev(nullptr), vec_iters() {}
 
         static void connect(node_base *a, node_base *b) { // a <=> b b.next = b;
             a->prev = b;
             b->next = a;
         }
-        virtual ~node_base() { }
-    };
-
-    class node: public node_base {
-    public:
-        T data;
-        std::vector<const_iterator *> vec_iters;
-
-        node() = delete;
-        node(T data): node_base(), data(data) { }
 
         void add_iter(const_iterator* iter) {
             vec_iters.push_back(iter);
@@ -49,8 +40,20 @@ private:
             assert(true);
         }
 
+        virtual ~node_base() {
+            node_base::invalid_all();
+        }
+    };
+
+    class node: public node_base {
+    public:
+        T data;
+
+        node() = delete;
+        node(T data): node_base(), data(data) { }
+
         ~node() {
-            invalid_all();
+            node_base::invalid_all();
         }
     };
     node_base *begin_node, *end_node;//fake node
@@ -118,11 +121,17 @@ public:
         node_base::connect(begin_node, _node->prev);
         delete _node;
     }
-    void insert(const_iterator, T const&) {
-
+    void insert(const_iterator iter, T const& data) { // iterator for prev
+        node *_node = new node(data);
+        node_base::connect(iter._node->next, _node);
+        node_base::connect(_node, iter._node);
     }
 
-    iterator erase(const iterator);
+    iterator erase(const iterator iter) {
+//        node_base::connect(iter);
+        /// need ++oper for iter
+    }
+
     void splice(const_iterator pos, list& other, const_iterator first, const_iterator last);
 
     ~list() {
@@ -134,7 +143,8 @@ template <typename T>
 template <typename CT>
 class list<T>::my_iterator {
 private:
-    friend list<T>::node;
+    friend list<T>::node_base;
+    friend list<T>;
     node *_node;
     bool is_invalid;
     void invalid() {
@@ -142,8 +152,18 @@ private:
         is_invalid = true;
     }
 public:
-    my_iterator();
-    my_iterator(my_iterator const&);
+    my_iterator() = delete;
+    my_iterator(my_iterator const& other): _node(other._node), is_invalid(other.is_invalid) {
+        _node->add_iter(this);
+    }
+
+    template <typename A>
+    my_iterator(const my_iterator<A> &other, typename std::enable_if<std::is_convertible<CT, A>::value>::type *def = nullptr)
+
+
+    ~my_iterator() {
+        _node->sub_iter(this);
+    }
 private:
 
 };
