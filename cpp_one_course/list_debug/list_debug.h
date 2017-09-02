@@ -121,6 +121,21 @@ public:
         return const_iterator(end_node, this);
     }
 
+    reverse_iterator rbegin() {
+        return reverse_iterator(end());
+    }
+    const_reverse_iterator rbegin() const {
+        return const_reverse_iterator(end());
+    }
+
+    reverse_iterator rend() {
+        return reverse_iterator(begin());
+    }
+    const_reverse_iterator rend() const {
+        return const_reverse_iterator(begin());
+    }
+
+
     bool empty() const{
         return begin_node->prev == end_node;
     }
@@ -302,7 +317,7 @@ public:
     }
 
     my_iterator& operator--() {
-        assert(is_invalid == false)
+        assert(is_invalid == false);
         assert(_node != owner->begin_node);
         _node->sub_iter(this);
         _node = _node->next;
