@@ -5,6 +5,8 @@ using namespace std;
 
 template class list_debug<int>;
 
+template class list_debug<string>;
+
 int main()
 {
     cout << "Hello World!" << endl;
@@ -33,9 +35,10 @@ int main()
         c.splice(it, p, p.begin(), p.end());
 
         cout << endl;
-        for (auto it = c.begin(); it != c.end(); ++it) {
+        for (auto it = c.rbegin(); it != c.rend(); ++it) {
             cout << *it << " ";
         }
         cout << endl;
+
     return 0;
 }

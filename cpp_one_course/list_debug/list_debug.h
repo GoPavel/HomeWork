@@ -85,10 +85,11 @@ public:
         end_node = new node_base();
         node_base::connect(begin_node, end_node);
     }
-    list_debug(list_debug const& other) {
-        node_base *i = other.begin_node;
+    list_debug(list_debug const& other):list_debug() {
+        node_base *i = other.begin_node->next;
         while (i != other.end_node) {
             push_back(dynamic_cast<node*>(i)->data);
+            i = i->prev;
         }
     }
 
@@ -234,15 +235,15 @@ public:
 
     }
 
-    friend void swap(list_debug const& a, list_debug const& b) {
+    friend void swap(list_debug & a, list_debug & b) {
         for(typename list_debug<T>::node_base *i = a.begin_node->prev; i != a.end_node; i = i->prev) {
             i->update_owner(&b);
         }
         for(typename list_debug<T>::node_base *i = b.begin_node->prev; i != b.end_node; i = i->prev) {
             i->update_owner(&a);
         }
-        swap(a.begin_node, b.begin_node);
-        swap(a.end_node, b.end_node);
+        std::swap(a.begin_node, b.begin_node);
+        std::swap(a.end_node, b.end_node);
     }
 
     ~list_debug() {
@@ -293,7 +294,7 @@ public:
         return *this;
     }
 
-    CT operator*() const{
+    CT& operator*() const{
         assert(is_invalid == false);
         assert(_node != owner->end_node);
         assert(_node != owner->begin_node);
