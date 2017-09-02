@@ -117,6 +117,9 @@ public:
     iterator end() {
         return iterator(end_node, this);
     }
+    const_iterator end() const {
+        return const_iterator(end_node, this);
+    }
 
     bool empty() const{
         return begin_node->prev == end_node;
@@ -169,12 +172,11 @@ public:
         node_base::connect(_node, iter._node);
     }
 
-    iterator erase(const_iterator &iter) {
+    iterator erase(const_iterator const &iter) {
         assert(this == iter.owner);
         node_base *temp(iter._node->prev);
-        iter._node->sub_iter(&iter);
-        iter.invalid();
         node_base::connect(iter._node->next, iter._node->prev);
+        delete iter._node;
         return iterator(temp, this);
     }
 
@@ -241,7 +243,7 @@ private:
     friend list_debug<T>::node_base;
     friend list_debug<T>;
     node_base *_node;
-    mutable bool is_invalid;
+    bool is_invalid;
     typename std::conditional<std::is_const<CT>::value, list_debug<T> const, list_debug<T>>::type * owner;
 
     void invalid() {
@@ -254,6 +256,8 @@ private:
     }
 
 public:
+    my_iterator(): _node(nullptr), is_invalid(true) {}
+
     template <typename OTHER_TYPE>
     my_iterator(const my_iterator<OTHER_TYPE> &other,
                 typename std::enable_if<std::is_same<typename std::remove_const<CT>::type, OTHER_TYPE>::value>::type * = nullptr)
@@ -265,6 +269,13 @@ public:
         : _node(_node), is_invalid(false) {
         owner = _owner;
         _node->add_iter(this);
+    }
+
+    my_iterator &operator=(my_iterator const& other) {
+        _node->sub_iter(this);
+        _node = other._node;
+        is_invalid = other.is_invalid;
+        return *this;
     }
 
     CT operator*() const{
