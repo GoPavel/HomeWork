@@ -77,6 +77,8 @@ private:
 public:
     typedef my_iterator<T> iterator;
     typedef my_iterator<const T> const_iterator;
+    typedef std::reverse_iterator<iterator> reverse_iterator;
+    typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
 
     list_debug():begin_node(), end_node() {
         begin_node = new node_base();
@@ -117,7 +119,7 @@ public:
     }
 
     bool empty() const{
-        return begin_node->next == end_node;
+        return begin_node->prev == end_node;
     }
     void push_back(T const &new_data){
         node* _node = new node(new_data);
@@ -154,7 +156,6 @@ public:
         node_base::connect(_node->next, end_node);
         delete _node;
     }
-
     void pop_front() {
         assert(!empty());
         node_base *_node = begin_node->prev;
@@ -179,14 +180,18 @@ public:
 
     void splice(const_iterator pos, list_debug& other, const_iterator first, const_iterator last) {
         assert(pos.owner == this);
-        assert(first.owner == this);
-        assert(last.owner == this);
+        assert(first.owner == &other);
+        assert(last.owner == &other);
         bool check_first_to_last = false;
-        for(const_iterator it = first; it != other.end(); ++it) {
+        const_iterator it = first;
+        for(; it != other.end(); ++it) {
             if (it == last) {
                 check_first_to_last = true;
                 break;
             }
+        }
+        if (it == other.end()) {
+            check_first_to_last = true;
         }
         assert(check_first_to_last);
         bool pos_between_first_last = false;
@@ -196,7 +201,7 @@ public:
                 break;
             }
         }
-        assert(pos_between_first_last);
+        assert(!pos_between_first_last);
         assert(first != last);
 
         for(const_iterator it = first; it != other.end(); ++it) {
@@ -237,7 +242,7 @@ private:
     friend list_debug<T>;
     node_base *_node;
     mutable bool is_invalid;
-    std::conditional<std::is_const<CT>::value, list_debug<T> const, list_debug<T>>* owner;
+    typename std::conditional<std::is_const<CT>::value, list_debug<T> const, list_debug<T>>::type * owner;
 
     void invalid() {
         assert(is_invalid == false);
@@ -256,7 +261,7 @@ public:
         _node->add_iter(this); // const int to int
     }
 
-    my_iterator(node_base *_node, std::conditional<std::is_const<CT>::value, list_debug<T> const, list_debug<T>> *_owner)
+    my_iterator(node_base *_node, typename  std::conditional<std::is_const<CT>::value, list_debug<T> const, list_debug<T>>::type *_owner)
         : _node(_node), is_invalid(false) {
         owner = _owner;
         _node->add_iter(this);
@@ -264,7 +269,9 @@ public:
 
     CT operator*() const{
         assert(is_invalid == false);
-        return _node->data;
+        assert(_node != owner->end_node);
+        assert(_node != owner->begin_node);
+        return dynamic_cast<node*>(_node)->data;
     }
 
     my_iterator& operator++() {
@@ -276,7 +283,7 @@ public:
         return *this;
     }
     my_iterator operator++(int) {
-        assert(is_invalid == false)
+        assert(is_invalid == false);
         assert(_node != owner->end_node);
         my_iterator temp(*this);
         ++(*this);
@@ -315,6 +322,13 @@ public:
         assert(b.is_invalid == false);
         return a._node != b._node;
     }
+
+    typedef std::ptrdiff_t difference_type;
+    typedef CT value_type;
+    typedef CT* pointer;
+    typedef CT& reference;
+    typedef std::bidirectional_iterator_tag iterator_category;
+
 private:
 
 };
