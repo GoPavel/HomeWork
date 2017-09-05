@@ -10,7 +10,7 @@ private:
     class any_iterator {
     public:
         virtual void invalid() = 0;
-        virtual void update_owner(list_debug<T>*) = 0;
+        virtual void update_owner(list_debug<T> const*) = 0;
     };
     template <typename CT> class my_iterator;
     class node_base {
@@ -40,9 +40,9 @@ private:
                     return;
                 }
             }
-            assert(true);
+            assert(false);
         }
-        void update_owner_iters(list_debug<T> *new_owner) {
+        void update_owner_iters(list_debug<T> const* new_owner) {
             for(size_t i = 0; i < vec_iters.size(); i++) {
                 vec_iters[i]->update_owner(new_owner);
             }
@@ -60,7 +60,7 @@ private:
         node() = delete;
         node(T data): node_base(), data(data) { }
 
-        ~node() { }
+        ~node() override { }
     };
     node_base *begin_node, *end_node;//fake node
 
@@ -255,14 +255,14 @@ private:
     friend list_debug<T>;
     node_base *_node;
     bool is_invalid;
-    typename std::conditional<std::is_const<CT>::value, list_debug<T> const, list_debug<T>>::type * owner;
+    list_debug<T> const* owner;
 
-    void invalid() {
+    void invalid() override {
         assert(is_invalid == false);
         is_invalid = true;
     }
 
-    void update_owner(list_debug<T>* new_owner) {
+    void update_owner(list_debug<T> const* new_owner)  override {
         owner = new_owner;
     }
 
@@ -273,10 +273,11 @@ public:
     my_iterator(const my_iterator<OTHER_TYPE> &other,
                 typename std::enable_if<std::is_same<typename std::remove_const<CT>::type, OTHER_TYPE>::value>::type * = nullptr)
         : _node(other._node), is_invalid(other.is_invalid), owner(other.owner) {
-        _node->add_iter(this); // const int to int
+        _node->add_iter(this);
+        std::cout << std::endl << "i'm iterator" << std::endl;
     }
 
-    my_iterator(node_base *_node, typename  std::conditional<std::is_const<CT>::value, list_debug<T> const, list_debug<T>>::type *_owner)
+    my_iterator(node_base *_node, list_debug<T> const*_owner)
         : _node(_node), is_invalid(false) {
         owner = _owner;
         _node->add_iter(this);
@@ -286,6 +287,7 @@ public:
         _node->sub_iter(this);
         _node = other._node;
         is_invalid = other.is_invalid;
+        _node->add_iter(this);
         return *this;
     }
 
