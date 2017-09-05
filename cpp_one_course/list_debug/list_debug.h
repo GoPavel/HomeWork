@@ -42,7 +42,7 @@ private:
             }
             assert(true);
         }
-        void update_owner(list_debug<T> *new_owner) {
+        void update_owner_iters(list_debug<T> *new_owner) {
             for(size_t i = 0; i < vec_iters.size(); i++) {
                 vec_iters[i]->update_owner(new_owner);
             }
@@ -60,9 +60,7 @@ private:
         node() = delete;
         node(T data): node_base(), data(data) { }
 
-        ~node() {
-            node_base::invalid_all();
-        }
+        ~node() { }
     };
     node_base *begin_node, *end_node;//fake node
 
@@ -86,10 +84,8 @@ public:
         node_base::connect(begin_node, end_node);
     }
     list_debug(list_debug const& other):list_debug() {
-        node_base *i = other.begin_node->next;
-        while (i != other.end_node) {
-            push_back(dynamic_cast<node*>(i)->data);
-            i = i->prev;
+        for (node_base *i = other.begin_node->prev; i != other.end_node; i = i->prev) {
+            push_back(dynamic_cast<node *>(i)->data);
         }
     }
 
@@ -101,8 +97,7 @@ public:
 
     list_debug& operator=(list_debug const& other) {
         clear();
-        node_base *i = other.begin_node;
-        while (i != other.end_node) {
+        for (node_base *i = other.begin_node->prev; i != other.end_node; i = i->prev) {
             push_back(dynamic_cast<node*>(i)->data);
         }
         return *this;
@@ -223,7 +218,7 @@ public:
         assert(first != last);
 
         for(const_iterator it = first; it != other.end(); ++it) {
-            it._node->update_owner(this);
+            it._node->update_owner_iters(this);
         }
 
         node_base* begin_path = first._node;
@@ -237,10 +232,10 @@ public:
 
     friend void swap(list_debug & a, list_debug & b) {
         for(typename list_debug<T>::node_base *i = a.begin_node->prev; i != a.end_node; i = i->prev) {
-            i->update_owner(&b);
+            i->update_owner_iters(&b);
         }
         for(typename list_debug<T>::node_base *i = b.begin_node->prev; i != b.end_node; i = i->prev) {
-            i->update_owner(&a);
+            i->update_owner_iters(&a);
         }
         std::swap(a.begin_node, b.begin_node);
         std::swap(a.end_node, b.end_node);
@@ -335,7 +330,9 @@ public:
     }
 
     ~my_iterator() {
-        _node->sub_iter(this);
+        if (is_invalid == false) {
+            _node->sub_iter(this);
+        }
     }
 
     friend bool operator==(my_iterator const &a, my_iterator const &b)  {
@@ -348,6 +345,17 @@ public:
         assert(a.is_invalid == false);
         assert(b.is_invalid == false);
         return a._node != b._node;
+    }
+
+    friend void swap(my_iterator &a, my_iterator &b) {
+        assert(a.owner == b.owner);
+        assert(a.is_invalid == false);
+        assert(b.is_invalid == false);
+        a._node->sub_iter(&a);
+        b._node->sub_iter(&b);
+        std::swap(a._node, b._node);
+        a._node->add_iter(&a);
+        b._node->add_iter(&b);
     }
 
     typedef std::ptrdiff_t difference_type;
