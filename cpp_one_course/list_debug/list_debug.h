@@ -269,12 +269,16 @@ private:
 public:
     my_iterator(): _node(nullptr), is_invalid(true) {}
 
+    my_iterator(my_iterator const &other):
+        _node(other._node), is_invalid(other.is_invalid), owner(other.owner) {
+        _node->add_iter(this);
+    }
+
     template <typename OTHER_TYPE>
     my_iterator(const my_iterator<OTHER_TYPE> &other,
                 typename std::enable_if<std::is_same<typename std::remove_const<CT>::type, OTHER_TYPE>::value>::type * = nullptr)
         : _node(other._node), is_invalid(other.is_invalid), owner(other.owner) {
         _node->add_iter(this);
-        std::cout << std::endl << "i'm iterator" << std::endl;
     }
 
     my_iterator(node_base *_node, list_debug<T> const*_owner)
@@ -311,7 +315,7 @@ public:
         assert(_node != owner->end_node);
         my_iterator temp(*this);
         ++(*this);
-        return temp;
+        return *this;
     }
 
     my_iterator& operator--() {

@@ -46,10 +46,16 @@ void print(list_debug<T> &a) {
     cout << endl;
 }
 
+//template <typename FUNC_TYPE, typename T, typename OTHER...>
+//void meta_func(FUNC_TYPE *func, T a, OTHER other...) {
+//    func(a);
+//    meta_func(func, )
+//}
+
 int main() {
 
     cout << "TEST #list\n----------------------------------------" << endl;
-#define Q (40)
+#define Q (10)
     cout << "Tests pop/push_back/front\n" << endl;
     cout << "Test#1" << endl;
     list_debug<int> L;
@@ -235,11 +241,25 @@ int main() {
 
     q.push_front(100);
     iter it3 = q.begin();
-    for(int i = 0; i < 1; ++i) {
-        q.erase(iter(it3));
+    for(int i = 0; i < 50; ++i) {
+        iter temp(it3);
         ++++it3;
+        q.erase(temp);
     }
     print(q);
+    cout << endl;
+
+    cout << "Test #splice\n" <<  endl; {
+
+        list_debug<int> a, b, c;
+        add_val(a, 1, 5);
+        add_val(b, 2, 5);
+        add_val(c, 3, 5);
+
+
+
+    }
+
 
     cout << endl;
     cout << "END TEST" << endl;
