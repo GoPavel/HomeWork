@@ -332,7 +332,7 @@ public:
     }
 
     my_iterator operator--(int) {
-        assert(is_invalid == false)
+        assert(is_invalid == false);
         assert(_node != owner->begin_node);
         my_iterator temp(*this);
         --(*this);

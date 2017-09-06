@@ -316,8 +316,62 @@ int main() {
         cout << endl;
     }
 
+    cout << "Test invalid iterator\n" << endl;
+    {
+        list_debug<int> a;
+        auto it = a.begin();
+        for (int i = 0; i < 5; i++) {
+            a.insert(it, i);
+        }
+        cout << "a = "; print(a);
+        a.erase(it = a.begin()); // it is invalid;
+        cout << "a = "; print(a);
+        cout << "Testing... work with invalid iterator" << endl;
+        { // test work with invalid iterator
+//            *it;
+//            it++;
+//            ++it;
+//            --it;
+//            it--;
+//            auto it2 = it;
+              auto it3 = a.begin();
+//            it == it3;
+//            it != it3;
+        }
+//        cout  << "a = "; print(a);
+//        cout << "Testing... work with invalid reverse_iterator" << endl;
+//        auto rit = a.rbegin();
+//        cout << *rit << endl;
+//        rit++;
+//        cout << *rit << endl;
+//        a.erase(--a.end());
+//        cout  << "a = "; print(a);
+//        cout << *rit << endl;
 
+        {
+            list_debug<int> *dl = new list_debug<int>();
 
+            dl->push_back(1);
+            dl->push_back(2);
+            dl->push_back(3);
+
+            auto it = dl->begin();
+
+            delete dl;
+            { // test work with invalid iterator
+//                *it;
+//                it++;
+//                ++it;
+//                --it;
+//                it--;
+//                  auto it2 = it;
+                auto it3 = a.begin();
+//                it == it3;
+//                it != it3;
+            }
+
+        }
+    }
     cout << endl;
     cout << "END TEST" << endl;
     return 0;
