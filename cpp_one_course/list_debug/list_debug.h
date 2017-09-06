@@ -271,6 +271,7 @@ public:
 
     my_iterator(my_iterator const &other):
         _node(other._node), is_invalid(other.is_invalid), owner(other.owner) {
+        assert(other.is_invalid == false);
         _node->add_iter(this);
     }
 
@@ -278,6 +279,7 @@ public:
     my_iterator(const my_iterator<OTHER_TYPE> &other,
                 typename std::enable_if<std::is_same<typename std::remove_const<CT>::type, OTHER_TYPE>::value>::type * = nullptr)
         : _node(other._node), is_invalid(other.is_invalid), owner(other.owner) {
+        assert(other.is_invalid == false);
         _node->add_iter(this);
     }
 
@@ -288,9 +290,11 @@ public:
     }
 
     my_iterator &operator=(my_iterator const& other) {
+        assert(other.is_invalid == false);
         _node->sub_iter(this);
         _node = other._node;
         is_invalid = other.is_invalid;
+        update_owner(other.owner);
         _node->add_iter(this);
         return *this;
     }

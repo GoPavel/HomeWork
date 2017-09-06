@@ -39,18 +39,29 @@ void add_val(list_debug<T> &a, T val, size_t cnt) {
 }
 
 template <typename T>
-void print(list_debug<T> &a) {
+bool print(list_debug<T> &a) {
     for (typename list_debug<T>::iterator it = a.begin(); it != a.end(); ++it) {
         cout << (*it) << " ";
     }
     cout << endl;
+    return true;
 }
 
-//template <typename FUNC_TYPE, typename T, typename OTHER...>
-//void meta_func(FUNC_TYPE *func, T a, OTHER other...) {
-//    func(a);
-//    meta_func(func, )
-//}
+template <typename T>
+typename list_debug<T>::iterator &inc(typename list_debug<T>::iterator &iter, size_t cnt) {
+    for (size_t i = 0; i < cnt; ++i) {
+        ++iter;
+    }
+    return iter;
+}
+
+template <typename T>
+typename list_debug<T>::iterator &dec(typename list_debug<T>::iterator &iter, size_t cnt) {
+    for (size_t i = 0; i < cnt; ++i) {
+        --iter;
+    }
+    return iter;
+}
 
 int main() {
 
@@ -251,14 +262,60 @@ int main() {
 
     cout << "Test #splice\n" <<  endl; {
 
+        cout << "begin" << endl;
         list_debug<int> a, b, c;
         add_val(a, 1, 5);
         add_val(b, 2, 5);
         add_val(c, 3, 5);
+        cout << "a: "; print(a);
+        cout << "b: "; print(b);
+        cout << "c: "; print(c);
+        cout << endl;
 
+        cout << "b.splice(b.begin(), a, a.begin(), a.end());" << endl;
+        b.splice(b.begin(), a, a.begin(), a.end());
+        cout << "a: "; print(a);
+        cout << "b: "; print(b);
+        cout << "c: "; print(c);
+        cout << endl;
 
+        cout << "b.splice(b.end(), c, c.begin(), c.end());" << endl;
+        b.splice(b.end(), c, c.begin(), c.end());
+        cout << "a: "; print(a);
+        cout << "b: "; print(b);
+        cout << "c: "; print(c);
+        cout << endl;
 
+        cout << "a.splice(a.begin(), b, b.begin(), b.end());" << endl;
+        a.splice(a.begin(), b, b.begin(), b.end());
+        cout << "a: "; print(a);
+        cout << "b: "; print(b);
+        cout << "c: "; print(c);
+        cout << endl;
+{
+        list_debug<int> a;
+        typename list_debug<int>::iterator g = a.begin();
+//        typename list_debug<int>::iterator &h = g;
+}
+        auto it1 = a.begin();
+        auto it2 = a.end();
+
+        cout << "b.splice(b.begin(), a, inc<int>(a.begin(), 5), dec<int>(a.end(), 5));" << endl;
+        b.splice(b.begin(), a, inc<int>(it1, 5), dec<int>(it2, 5));
+        cout << "a: "; print(a);
+        cout << "b: "; print(b);
+        cout << "c: "; print(c);
+        cout << endl;
+
+        cout << "c.splice(c.begin(), a, inc<int>(a.begin(), 5), a.end());" << endl;
+        it3 = a.begin();
+        c.splice(c.begin(), a, inc<int>(it3, 5), a.end());
+        cout << "a: "; print(a);
+        cout << "b: "; print(b);
+        cout << "c: "; print(c);
+        cout << endl;
     }
+
 
 
     cout << endl;
