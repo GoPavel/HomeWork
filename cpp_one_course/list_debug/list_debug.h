@@ -212,7 +212,7 @@ public:
         }
         assert(check_first_to_last);
         bool pos_between_first_last = false;
-        for(const_iterator it = first; it != other.end(); ++it) {
+        for(const_iterator it = first; it != last; ++it) {
             if (it == pos) {
                 pos_between_first_last = true;
                 break;
@@ -221,7 +221,7 @@ public:
         assert(!pos_between_first_last);
         assert(first != last);
 
-        for(const_iterator it = first; it != other.end(); ++it) {
+        for(const_iterator it = first; it != last; ++it) {
             it._node->update_owner_iters(this);
         }
 
