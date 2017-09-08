@@ -80,7 +80,11 @@ public:
 
     list_debug():begin_node(), end_node() {
         begin_node = new node_base();
-        end_node = new node_base();
+        try {
+            end_node = new node_base();
+        } catch (...) {
+            delete begin_node;
+        }
         node_base::connect(begin_node, end_node);
     }
     list_debug(list_debug const& other):list_debug() {
