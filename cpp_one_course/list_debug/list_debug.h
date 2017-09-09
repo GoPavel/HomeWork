@@ -247,7 +247,8 @@ public:
             }
         }
         assert(!pos_between_first_last);
-        if (first != last) return;
+        if (first == last)
+            return;
 
         for(const_iterator it = first; it != last; ++it) {
             it._node->update_owner_iters(this);
@@ -364,7 +365,7 @@ public:
 
     my_iterator& operator--() {
         assert(is_invalid == false);
-        assert(_node != owner->begin_node);
+        assert(_node != owner->begin_node->prev);
         _node->sub_iter(this);
         _node = _node->next;
         _node->push_back(this);
@@ -373,7 +374,7 @@ public:
 
     my_iterator operator--(int) {
         assert(is_invalid == false);
-        assert(_node != owner->begin_node);
+        assert(_node != owner->begin_node->prev);
         my_iterator temp(*this);
         --(*this);
         return temp;
