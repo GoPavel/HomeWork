@@ -124,10 +124,11 @@ public:
     }
 
     list_debug& operator=(list_debug const& other) {
-        clear();
+        list_debug temp;
         for (node_base *i = other.begin_node->prev; i != other.end_node; i = i->prev) {
-            push_back(dynamic_cast<node*>(i)->data);
+            temp.push_back(dynamic_cast<node*>(i)->data);
         }
+        clear();
         return *this;
     }
 
@@ -243,7 +244,7 @@ public:
             }
         }
         assert(!pos_between_first_last);
-        assert(first != last);
+        if (first != last) return;
 
         for(const_iterator it = first; it != last; ++it) {
             it._node->update_owner_iters(this);
@@ -325,7 +326,9 @@ public:
 
     my_iterator &operator=(my_iterator const& other) {
         assert(other.is_invalid == false);
-        _node->sub_iter(this);
+        if (is_invalid == false) {
+            _node->sub_iter(this);
+        }
         _node = other._node;
         is_invalid = other.is_invalid;
         owner = other.owner;
@@ -353,7 +356,7 @@ public:
         assert(_node != owner->end_node);
         my_iterator temp(*this);
         ++(*this);
-        return *this;
+        return temp;
     }
 
     my_iterator& operator--() {
