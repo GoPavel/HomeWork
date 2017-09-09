@@ -129,6 +129,9 @@ public:
             temp.push_back(dynamic_cast<node*>(i)->data);
         }
         clear();
+        for (node_base *i = temp.begin_node->prev; i != temp.end_node; i = i->prev) {
+            push_back(dynamic_cast<node*>(i)->data);
+        }
         return *this;
     }
 
