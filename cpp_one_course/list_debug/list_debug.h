@@ -2,6 +2,7 @@
 #define LIST_DEBUG_H
 #include <vector>
 #include <cassert>
+#include <memory>
 
 template <typename T>
 class list_debug {
@@ -12,44 +13,61 @@ private:
         virtual void invalid() = 0;
         virtual void update_owner(list_debug<T> const*) = 0;
     };
+
+    struct Existence {
+        list_debug *owner;
+        Existence(list_debug* owner): owner(owner){}
+    }* ref_me;
+
     template <typename CT> class my_iterator;
     class node_base {
     public:
-        node_base *next, *prev;
-        std::vector<any_iterator *> vec_iters;
+        std::shared_ptr<node_base> next, prev;
+//        node_base *next, *prev;
+//        std::vector<any_iterator *> vec_iters;
 
-        node_base(): next(nullptr), prev(nullptr), vec_iters() {}
+        node_base()/*:  next(nullptr), prev(nullptr), vec_iters()*/ {}
 
-        static void connect(node_base *a, node_base *b) { // a <=> b b.next = b;
+        virtual bool is_fake() {
+            return true;
+        }
+
+//        friend void connect(node_base *a, node_base *b) {
+//            a->prev = b;
+//            b->next = a;
+//        }
+
+        // a <=> b b.next = b;
+        friend void connect(std::shared_ptr<node_base> a, std::shared_ptr<node_base> b) {
             a->prev = b;
             b->next = a;
         }
 
-        void add_iter(any_iterator* iter) {
-            vec_iters.push_back(iter);
-        }
-        void invalid_all() {
-            for (size_t i = 0; i < vec_iters.size(); i++) {
-                vec_iters[i]->invalid();
-            }
-        }
-        void sub_iter(any_iterator* iter) {
-            for(size_t i = 0; i < vec_iters.size(); i++) {
-                if (vec_iters[i] == iter) {
-                    vec_iters.erase(vec_iters.begin() + i);
-                    return;
-                }
-            }
-            assert(false);
-        }
-        void update_owner_iters(list_debug<T> const* new_owner) {
-            for(size_t i = 0; i < vec_iters.size(); i++) {
-                vec_iters[i]->update_owner(new_owner);
-            }
+//        void add_iter(any_iterator* iter) {
+//            vec_iters.push_back(iter);
+//        }
+//        void invalid_all() {
+//            for (size_t i = 0; i < vec_iters.size(); i++) {
+//                vec_iters[i]->invalid();
+//            }
+//        }
+//        void sub_iter(any_iterator* iter) {
+//            for(size_t i = 0; i < vec_iters.size(); i++) {
+//                if (vec_iters[i] == iter) {
+//                    vec_iters.erase(vec_iters.begin() + i);
+//                    return;
+//                }
+//            }
+//            assert(false);
+//        }
+        void update_owner_iters(list_debug<T> const* new_owner) { ///TODO
+//            for(size_t i = 0; i < vec_iters.size(); i++) {
+//                vec_iters[i]->update_owner(new_owner);
+//            }
         }
 
         virtual ~node_base() {
-            node_base::invalid_all();
+//            node_base::invalid_all();
         }
     };
 
@@ -60,17 +78,24 @@ private:
         node() = delete;
         node(T data): node_base(), data(data) { }
 
+        virtual bool is_fake() override {
+            return false;
+        }
+
         ~node() override { }
     };
-    node_base *begin_node, *end_node;//fake node
+    std::shared_ptr<node_base> begin_node, end_node;
+//    node_base *begin_node, *end_node;//fake node
 
-    T const& get_data(node_base *cur) const {
-        return dynamic_cast<node *>(cur)->data;
+    static T& get_data(std::shared_ptr<node_base> const &cur){
+        return std::dynamic_pointer_cast<node>(cur)->data;
     }
 
-    T &get_data(node_base *cur){
-        return dynamic_cast<node *>(cur)->data;
+    static T& get_data(std::shared_ptr<node_base> &cur){
+        return std::dynamic_pointer_cast<node>(cur)->data;
     }
+
+
 
 public:
     typedef my_iterator<T> iterator;
@@ -78,18 +103,12 @@ public:
     typedef std::reverse_iterator<iterator> reverse_iterator;
     typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
 
-    list_debug():begin_node(), end_node() {
-        begin_node = new node_base();
-        try {
-            end_node = new node_base();
-        } catch (...) {
-            delete begin_node;
-        }
-        node_base::connect(begin_node, end_node);
+    list_debug():ref_me(new Existence(this)), begin_node(new node_base), end_node(new node_base) {
+        connect(begin_node, end_node);
     }
     list_debug(list_debug const& other):list_debug() {
-        for (node_base *i = other.begin_node->prev; i != other.end_node; i = i->prev) {
-            push_back(dynamic_cast<node *>(i)->data);
+        for (auto it  = other.begin(); it != other.end(); ++it) {
+            push_back(*it);
         }
     }
 
@@ -101,8 +120,8 @@ public:
 
     list_debug& operator=(list_debug const& other) {
         clear();
-        for (node_base *i = other.begin_node->prev; i != other.end_node; i = i->prev) {
-            push_back(dynamic_cast<node*>(i)->data);
+        for (auto it  = other.begin(); it != other.end(); ++it) {
+            push_back(*it);
         }
         return *this;
     }
@@ -247,8 +266,7 @@ public:
 
     ~list_debug() {
         clear();
-        delete begin_node;
-        delete end_node;
+        delete ref_me;
     }
 };
 template <typename T>
@@ -257,14 +275,15 @@ class list_debug<T>::my_iterator: public list_debug<T>::any_iterator {
 private:
     friend list_debug<T>::node_base;
     friend list_debug<T>;
-    node_base *_node;
-    bool is_invalid;
-    list_debug<T> const* owner;
+//    node_base *_node;
+     std::weak_ptr<node_base> node;
+//    bool is_invalid;
+    list_debug<T>::Existence const* owner;
 
-    void invalid() override {
-        assert(is_invalid == false);
-        is_invalid = true;
-    }
+//    void invalid() override {
+//        assert(is_invalid == false);
+//        is_invalid = true;
+//    }
 
     void update_owner(list_debug<T> const* new_owner)  override {
         owner = new_owner;
