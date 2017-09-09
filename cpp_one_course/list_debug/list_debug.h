@@ -46,13 +46,14 @@ private:
                         if (end_iter == i) {
                             end_iter = i_prev;
                         }
-                        i_prev = i->get_next();
+                        i_prev->get_next() = i->get_next();
                         break;
                     }
                     i_prev = i;
                     i = i->get_next();
                 }
             }
+            iter->get_next() = nullptr;
         }
 
         void update_owner_iters(list_debug<T> const* new_owner) {
@@ -302,7 +303,7 @@ public:
     my_iterator(): _node(nullptr), is_invalid(true), next(nullptr) {}
 
     my_iterator(my_iterator const &other):
-        _node(other._node), is_invalid(other.is_invalid), owner(other.owner) {
+        _node(other._node), is_invalid(other.is_invalid), owner(other.owner), next(nullptr) {
         assert(other.is_invalid == false);
         _node->push_back(this);
     }
@@ -310,7 +311,7 @@ public:
     template <typename OTHER_TYPE>
     my_iterator(const my_iterator<OTHER_TYPE> &other,
                 typename std::enable_if<std::is_same<typename std::remove_const<CT>::type, OTHER_TYPE>::value>::type * = nullptr)
-        : _node(other._node), is_invalid(other.is_invalid), owner(other.owner) {
+        : _node(other._node), is_invalid(other.is_invalid), owner(other.owner), next(nullptr) {
         assert(other.is_invalid == false);
         _node->push_back(this);
     }
@@ -318,6 +319,7 @@ public:
     my_iterator(node_base *_node, list_debug<T> const*_owner)
         : _node(_node), is_invalid(false) {
         owner = _owner;
+        next = nullptr;
         _node->push_back(this);
     }
 
