@@ -49,43 +49,24 @@ struct G<placeholder<N>> {
     }
 };
 
-template <typename F, typename A1, typename A2, typename A3>
+template <typename F, typename ... As>
 struct bind_t
 {
-    bind_t(F f, A1 a1, A2 a2, A3 a3)
+    bind_t(F f, As ... as)
         : f(f)
-        , g1(a1)
-        , g2(a2)
-        , g3(a3)
+        , gs(as...)
     {}
 
-    void operator()() const
+    template <typename ... Bs>
+    decltype(auto) operator()(Bs ... bs) const
     {
-        return f(g1(), g2(), g3());
-    }
-
-    template <typename B1>
-    void operator()(B1 b1) const
-    {
-        return f(g1(b1), g2(b1), g3(b1));
-    }
-
-    template <typename B1, typename B2>
-    void operator()(B1 b1, B2 b2) const
-    {
-        return f(g1(b1, b2), g2(b1, b2), g3(b1, b2));
-    }
-
-    template <typename B1, typename B2, typename B3>
-    void operator()(B1 b1, B2 b2, B3 b3) const
-    {
-        return f(g1(b1, b2, b3), g2(b1, b2, b3), g3(b1, b2, b3));
+        return f(std::get<0>(gs)(bs...),
+                 std::get<1>(gs)(bs...),
+                 std::get<2>(gs)(bs...));
     }
 
     F f;
-    G<A1> g1;
-    G<A2> g2;
-    G<A3> g3;
+    std::tuple<G<As>...> gs;
 };
 
 template <typename F, typename... MANY_A>
