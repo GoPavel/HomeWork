@@ -1,6 +1,7 @@
 #ifndef _EASY_BIND_HEADER_
 #define _EASY_BIND_HEADER_
 #include <iostream>
+#include <tuple>
 
 template <int N>
 struct placeholder { };
@@ -60,10 +61,16 @@ struct bind_t
     template <typename ... Bs>
     decltype(auto) operator()(Bs ... bs) const
     {
-        return f(std::get<0>(gs)(bs...),
-                 std::get<1>(gs)(bs...),
-                 std::get<2>(gs)(bs...));
+        return call(std::make_integer_sequence<int, sizeof... (As), bs...>)
     }
+
+private:
+
+    template <int... ks, typename... Bs>
+    decltype(auto) call(std::integer_sequence<int, ks...>, Bs... bs) const {
+        return f(std::get<ks>(gs)(bs...)...);
+    }
+
 
     F f;
     std::tuple<G<As>...> gs;
