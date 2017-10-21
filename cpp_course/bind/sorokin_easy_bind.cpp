@@ -1,6 +1,31 @@
 #include <iostream>
 #include <tuple>
 
+template <typename T, T ... values>
+struct integer_sequence
+{};
+
+template <typename T, typename Seq, T arg>
+struct append;
+
+template <typename T, T ... values, T arg>
+struct append<T, integer_sequence<T, values...>, arg>
+{
+    typedef integer_sequence<T, values..., arg> type;
+};
+
+template <typename T, T N, typename Q = void>
+struct make_integer_sequence
+{
+    typedef typename append<T, typename make_integer_sequence<T, N - 1>::type, N - 1>::type type;
+};
+
+template <typename T, T N>
+struct make_integer_sequence<T, N, typename std::enable_if<N == 0>::type>
+{
+    typedef integer_sequence<T> type;
+};
+
 template <int N>
 struct placeholder
 {};
@@ -63,12 +88,12 @@ struct bind_t
     template <typename ... Bs>
     decltype(auto) operator()(Bs ... bs) const
     {
-        return call(std::make_integer_sequence<int, sizeof...(As)>(), bs...);
+        return call(typename make_integer_sequence<int, sizeof...(As)>::type(), bs...);
     }
 
 private:
     template <int... ks, typename ... Bs>
-    decltype(auto) call(std::integer_sequence<int, ks...>, Bs ... bs) const
+    decltype(auto) call(integer_sequence<int, ks...>, Bs ... bs) const
     {
         return f(std::get<ks>(gs)(bs...)...);
     }
