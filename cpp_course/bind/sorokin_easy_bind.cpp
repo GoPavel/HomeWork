@@ -1,20 +1,3 @@
-
-Skip to content
-
-    All gists
-    GitHub
-
-    New gist
-
-0
-
-    0
-
-@sorokin sorokin/bind-1.cpp
-Last active 4 minutes ago •
-Code
-Revisions 2
-bind-1.cpp
 #include <iostream>
 
 template <int N>
@@ -32,25 +15,8 @@ struct G
         : a(a)
     {}
 
-    A operator()() const
-    {
-        return a;
-    }
-
-    template <typename B1>
-    A operator()(B1 b1) const
-    {
-        return a;
-    }
-
-    template <typename B1, typename B2>
-    A operator()(B1 b1, B2 b2) const
-    {
-        return a;
-    }
-
-    template <typename B1, typename B2, typename B3>
-    A operator()(B1 b1, B2 b2, B3 b3) const
+    template <typename ... Bs>
+    A operator()(Bs ...) const
     {
         return a;
     }
@@ -64,54 +30,24 @@ struct G<placeholder<1> >
     G(placeholder<1>)
     {}
 
-    template <typename B1>
-    B1 operator()(B1 b1) const
-    {
-        return b1;
-    }
-
-    template <typename B1, typename B2>
-    B1 operator()(B1 b1, B2 b2) const
-    {
-        return b1;
-    }
-
-    template <typename B1, typename B2, typename B3>
-    B1 operator()(B1 b1, B2 b2, B3 b3) const
+    template <typename B1, typename ... Bs>
+    B1 operator()(B1 b1, Bs ...) const
     {
         return b1;
     }
 };
 
-template <>
-struct G<placeholder<2> >
+template <int N>
+struct G<placeholder<N> >
 {
-    G(placeholder<2>)
+    G(placeholder<N>)
     {}
 
-    template <typename B1, typename B2>
-    B2 operator()(B1 b1, B2 b2) const
+    template <typename B, typename ... Bs>
+    decltype(auto) operator()(B, Bs ... bs) const
     {
-        return b2;
-    }
-
-    template <typename B1, typename B2, typename B3>
-    B2 operator()(B1 b1, B2 b2, B3 b3) const
-    {
-        return b2;
-    }
-};
-
-template <>
-struct G<placeholder<3> >
-{
-    G(placeholder<3>)
-    {}
-
-    template <typename B1, typename B2, typename B3>
-    B3 operator()(B1 b1, B2 b2, B3 b3) const
-    {
-        return b3;
+        G<placeholder<N - 1>> next((placeholder<N - 1>()));
+        return next(bs...);
     }
 };
 
@@ -154,10 +90,10 @@ struct bind_t
     G<A3> g3;
 };
 
-template <typename F, typename A1, typename A2, typename A3>
-bind_t<F, A1, A2, A3> bind(F f, A1 a1, A2 a2, A3 a3)
+template <typename F, typename ... As>
+bind_t<F, As...> bind(F f, As ... as)
 {
-    return bind_t<F, A1, A2, A3>(f, a1, a2, a3);
+    return bind_t<F, As...>(f, as...);
 }
 
 

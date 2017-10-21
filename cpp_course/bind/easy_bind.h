@@ -1,5 +1,6 @@
 #ifndef _EASY_BIND_HEADER_
 #define _EASY_BIND_HEADER_
+#include <iostream>
 
 template <int N>
 struct placeholder { };
@@ -12,51 +13,39 @@ constexpr placeholder<3> _3;
 template <typename A>
 struct G {
     G(A a): a(a);
+
+    template <typename ... Bs>
+    A operator()(Bs ...) const
+    {
+        return a;
+    }
+
+private:
+    A a;
 };
 
 template <>
-struct G<placeholder<1>> {
+struct G<placeholder<1> >
+{
+    G(placeholder<1>)
+    {}
 
-    G(placeholder<1>) {}
-
-    template<typename B1, typename B2, typename B3>
-    B1 operator()(B1 b1, B2 b2, B3 b3) const { // choose first arg
-        return b1;
-    }
-
-    template<typename B1, typename B2>
-    B1 operator()(B1 b1, B2 b2) const { // choose first arg
-        return b1;
-    }
-
-    template<typename B1>
-    B1 operator()(B1 b1) const { // choose first arg
+    template <typename B1, typename ... Bs>
+    B1 operator()(B1 b1, Bs ...) const
+    {
         return b1;
     }
 };
 
-template <>
-struct G<placeholder<2>> {
 
-    G(placeholder<2>) {}
+template <int N>
+struct G<placeholder<N>> {
+    G (placeholder<N>) {};
 
-    template<typename B1, typename B2, typename B3>
-    B2 operator()(B1 b1, B2 b2, B3 b3) const { // choose second arg
-        return b2;
-    }
-
-    template<typename B1, typename B2>
-    B2 operator()(B1 b1, B2 b2) const { // choose second arg
-        return b2;
-    }
-};
-template <>
-struct G<placeholder<3>> {
-    G(placeholder<3>) {}
-
-    template<typename B1, typename B2, typename B3>
-    B3 operator()(B1 b1, B2 b2, B3 b3) const { // choose third arg
-        return b3;
+    template <typename B, typename _Bs>
+    decltype(auto) operator() (B b, _Bs... bs) const{
+        G<placeholder<N - 1>> next((placeholder<N - 1>()))
+        return next(bs...);
     }
 };
 
@@ -99,10 +88,10 @@ struct bind_t
     G<A3> g3;
 };
 
-template <typename F, typename A1, typename A2, typename A3>
-bind_t<F, A1, A2, A3> bind(F f, A1 a1, A2 a2, A3 a3)
+template <typename F, typename... MANY_A>
+bind_t<F, MANY_A...> bind(F f, MANY_A... many_a)
 {
-    return bind_t<F, A1, A2, A3>(f, a1, a2, a3);
+    return bind_t<F, MANY_A...>(f, many_a);
 }
 
 #endif
