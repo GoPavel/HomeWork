@@ -1,0 +1,4 @@
+*.jpg
+*.png
+*.sh
+/cpp_course/**/gtest
