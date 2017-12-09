@@ -1,6 +1,7 @@
 #ifndef PERSISTENT_SET_HEADER
 #define PERSISTENT_SET_HEADER
 #include <memory>
+#include <cassert>
 #include "smart_pointers/linked_ptr.h"
 #include "smart_pointers/shared_ptr.h"
 
@@ -11,10 +12,10 @@
 
 //CopyConstructible
 
-template <typename T, typename Memory_manager_ptr = std::shared_ptr>
+template <typename, template <typename> class>
 class persistent_set;
 
-template <typename T, typename Memory_manager_ptr = std::shared_ptr>
+template <typename T, template<typename> class Memory_manager_ptr = std::shared_ptr>
 class persistent_set {
 private: // struct
     struct Node_base;
@@ -24,7 +25,7 @@ private: // struct
         Pointer left, right;
         Node_base *parent;
     public: // method
-        Node_base(Pointer const &left, Pointer const &right, Node_base const* parent):
+        Node_base(Pointer const &left, Pointer const &right, Node_base* parent):
             left(left), right(right), parent(parent) { }
 
         Node_base():
@@ -43,14 +44,17 @@ private: // struct
             return new Node_base(*this);
         }
         virtual ~Node_base() = default;
-        virtual T const& get_data() = 0;
+
+        virtual T const& get_data() {
+            assert(true || "you tried get data from node_base");
+        }
     };
 
     struct Node: public Node_base {
     public: // members
         T data;
     public: //method
-        Node(T const& data, Pointer const &left, Pointer const &right, Node_base const* parent):
+        Node(T const& data, Pointer const &left, Pointer const &right, Node_base *parent):
              Node_base(left, right, parent), data(data) { }
 
         Node(T const& data):
@@ -64,6 +68,7 @@ private: // struct
         }
 
         ~Node() override = default;
+
         T const& get_data() override {
             return data;
         }
@@ -74,31 +79,32 @@ public: // struct
     struct my_iterator {
         friend class persistent_set;
 
-    private: // members
+    private: // members of iterator
         Node_base *ptr_node;
-    public: // method
+    public: // method of iterator
         my_iterator():
-            ptr(nullptr) { }
+            ptr_node(nullptr) { }
 
         my_iterator(my_iterator const &other):
-            ptr(other.ptr_node) { }
+            ptr_node(other.ptr_node) { }
 
         my_iterator(Node_base *v):
             ptr_node(v) { }
 
         my_iterator& operator=(my_iterator const &other) {
             ptr_node = other.ptr_node;
+            return *this;
         }
 
         ~my_iterator() = default;
 
         T operator*() const {
             assert(!is_end(ptr_node));
-            return ptr->get_data();
+            return ptr_node->get_data();
         }
 
         my_iterator& operator++() {
-            ptr_node = next(ptr_node);
+            ptr_node = next_node(ptr_node);
             return *this;
         }
         my_iterator operator++(int) {
@@ -108,7 +114,7 @@ public: // struct
         }
 
         my_iterator& operator--() {
-            ptr_node = prev(ptr_node);
+            ptr_node = prev_node(ptr_node);
             return *this;
         }
         my_iterator operator--(int) {
@@ -145,9 +151,10 @@ public: // method of perset
     persistent_set(persistent_set const &other):
         root(other.root), end_node(other.end_node) { }
 
-    persistent_set& operator=(persistent_set const&, root) {
+    persistent_set& operator=(persistent_set const& other) {
         root = other.root;
         end_node = other.end_node;
+        return *this;
     }
 
     ~persistent_set() = default;
@@ -163,14 +170,14 @@ public: // method of perset
 * if insert return true, than version this will change.
 * Old version will delete, if you didn't copy before insert
 * -------------------------------*/
-    pair<iterator, bool> insert(T const& element) {
-        Node_base *v = find_Impl(root, element);
-        if (is_end(v) || v->get_data == element) {
-            return make_pair(iterator(v), false);
+    std::pair<iterator, bool> insert(T const& element) {
+        Node_base *v = find_Impl(root.get(), element);
+        if ( is_end(v) || v->get_data() == element) {
+            return std::make_pair(iterator(v), false);
         } else {
             // insert and change root and end
             v = insert_Impl(v, element);
-            return make_pair(iterator(v), true);
+            return std::make_pair(iterator(v), true);
         }
     }
 
@@ -189,7 +196,7 @@ public: // method of perset
     }
 
     iterator end() const {
-        return iterator(node_base.get());
+        return iterator(end_node.get());
     }
 
     friend bool operator==(persistent_set const& a, persistent_set const& b) {
@@ -222,7 +229,7 @@ private: // method of perset
         return;
     }
 
-    Node_base* find_Impl(Node_base *v, T const &key) {
+    Node_base* find_Impl(Node_base *v, T const& key) {
         if (v->get_data() < key) {
             if (v->right)
                 return find_Impl(v->right.get(), key);
@@ -288,11 +295,11 @@ private: // method of perset
         // change version subtree, so change root end_node
         Node_base *ret = new Node(data);
         Pointer ptr = Pointer(ret);
-        copy_path_to_root(v, ptr, ptr->data < v->get_data());
+        copy_path_to_root(v, ptr, ptr->get_data() < v->get_data());
         return ret;
     }
 
-    Node_base* next(Node_base *v) {
+    static Node_base* next_node(Node_base *v) {
         assert(v != nullptr);
         Node_base *it = v;
         if (it->right) {
@@ -309,12 +316,12 @@ private: // method of perset
         }
     }
 
-    Node_base* prev(Node_base *v) {
+    static Node_base* prev_node(Node_base *v) {
         assert(v != nullptr);
         Node_base *it = v;
         if (it->left) {
             while (it->right) {
-                it = it->right;
+                it = it->right.get();
             }
             return it;
         } else {
