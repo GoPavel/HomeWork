@@ -17,6 +17,6 @@ public:
     virtual bool operator!=(smart_pointer_interface const& other) = 0;
 
     virtual ~smart_pointer_interface() = 0;
-}
+};
 
 #endif // SMART_POINTER_INTERFACE_H

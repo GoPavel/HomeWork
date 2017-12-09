@@ -2,13 +2,21 @@ cmake_minimum_required(VERSION 2.8)
 
 project(persistent_set)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pedantic -Wall -Wextra -std=c++11 -fsanitize=address,undefined -fno-sanitize-recover -fstack-protector")
+include_directories(${persistent_set_SOURCE_DIR})
 
-add_executable(${PROJECT_NAME} main.cpp
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pedantic -Wall -Wextra -std=c++14 -fsanitize=address,undefined -fno-sanitize-recover -fstack-protector")
+
+add_executable(${PROJECT_NAME}
                                persistent_set.h
+                               perset_testing.cpp
                                smart_pointers/linked_ptr.h
                                smart_pointers/shared_ptr.h
-                               smart_pointers/smart_pointer_interface.h)
+                               smart_pointers/smart_pointer_interface.h
+                               gtest/gtest-all.cc
+                               gtest/gtest.h
+                               gtest/gtest_main.cc)
+
+target_link_libraries(${PROJECT_NAME} -lpthread)
 
 # useful stuff:
 # ------------------------------------------------------------s
