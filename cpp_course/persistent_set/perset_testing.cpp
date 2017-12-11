@@ -52,20 +52,20 @@ TEST(correctness, insert_and_size) {
         }
         EXPECT_EQ(a.size(), size_pull);
     }
-//    {
-//        const int size_pull = 10;
-//        std::vector<int> int_pull;
-//        for (int i = 0; i < size_pull; ++i) {
-//            int_pull.push_back(i);
-//        }
-//        for (int i = 0; i < size_pull; ++i) {
-//            int_pull.push_back(i);
-//        }
-//        std::random_shuffle(int_pull.begin(), int_pull.end());
-//        persistent_set<int> a;
-//        for (auto it : int_pull) {
-//            a.insert(it);
-//        }
-//        EXPECT_EQ(a.size(), size_pull);
-//    }
+   {
+       const int size_pull = 10;
+       std::vector<int> int_pull;
+       for (int i = 0; i < size_pull; ++i) {
+           int_pull.push_back(i);
+       }
+       for (int i = 0; i < size_pull; ++i) {
+           int_pull.push_back(i);
+       }
+       std::random_shuffle(int_pull.begin(), int_pull.end());
+       persistent_set<int> a;
+       for (auto it : int_pull) {
+           a.insert(it);
+       }
+       EXPECT_EQ(a.size(), size_pull);
+   }
 }

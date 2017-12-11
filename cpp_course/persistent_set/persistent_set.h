@@ -180,13 +180,8 @@ public: // method of perset
         } else {
             // insert and change root and end
             v = insert_Impl(v, element);
-<<<<<<< HEAD
             ++_size;
             return std::make_pair(iterator(v), true);
-=======
-            return std::make_pair(iterator(v), true);
-            ++_size;
->>>>>>> origin/master
         }
     }
 
@@ -377,7 +372,6 @@ private: // method of perset
 * 2) test of copy
 * NB) May be, you should make delay deleted old root
 */
-
 
 ///TODO add swap()
 ///TODO add rvalue
