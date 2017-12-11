@@ -8,7 +8,6 @@ template class persistent_set<int>;
 TEST(correctness, default_constructor_dectructor) {
     persistent_set<int> a;
 }
-<<<<<<< HEAD
 
 TEST(correctness, copy_empty) {
     persistent_set<int> a;
@@ -23,5 +22,3 @@ TEST(correctness, insert_and_size) {
     EXPECT_EQ(1, a.size());
     a.insert(1);
 }
-=======
->>>>>>> origin/master
