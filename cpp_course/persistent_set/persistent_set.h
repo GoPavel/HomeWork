@@ -46,7 +46,7 @@ private: // struct
         virtual ~Node_base() = default;
 
         virtual T const& get_data() {
-            assert(true || "you tried get data from node_base");
+            assert(false && "you tried get data from node_base");
         }
     };
 
@@ -58,7 +58,7 @@ private: // struct
              Node_base(left, right, parent), data(data) { }
 
         Node(T const& data):
-            Node_base(),data(data) {}
+            Node_base(), data(data) {}
 
         Node(Node const &other):
             Node_base(other), data(other.data) { }
@@ -156,10 +156,7 @@ public: // method of perset
     persistent_set& operator=(persistent_set const& other) {
         root = other.root;
         end_node = other.end_node;
-<<<<<<< HEAD
         _size = other._size;
-=======
->>>>>>> origin/master
         return *this;
     }
 
@@ -167,7 +164,7 @@ public: // method of perset
 
     iterator find(T const &element) {
         Node_base *v = find_Impl(root.get(), element);
-        if (v->get_data() == element)
+        if (!is_end(v) && v->get_data() == element)
             return iterator(v);
         else return iterator(end_node.get());
     }
@@ -178,16 +175,13 @@ public: // method of perset
 * -------------------------------*/
     std::pair<iterator, bool> insert(T const& element) {
         Node_base *v = find_Impl(root.get(), element);
-        if ( is_end(v) || v->get_data() == element) {
+        if ( !is_end(v) && v->get_data() == element) {
             return std::make_pair(iterator(v), false);
         } else {
             // insert and change root and end
             v = insert_Impl(v, element);
-            return std::make_pair(iterator(v), true);
-<<<<<<< HEAD
             ++_size;
-=======
->>>>>>> origin/master
+            return std::make_pair(iterator(v), true);
         }
     }
 
@@ -231,6 +225,21 @@ private: // method of perset
     // copy path
     // v => node old branch, which first copy
     // ptr => node from new branch
+    static bool less_keys(Node_base *a, Node_base *b) { // a < b = true
+        assert(!is_end(a) || !is_end(b));
+        if (is_end(a)) // end is the biggest key
+            return false;
+        else if (is_end(b))
+            return true;
+        else return a->get_data() < b->get_data();
+    }
+
+    static bool less_keys(Node_base *v, T const& key) { // a < b = true
+        if(is_end(v))
+            return false;
+        else return v->get_data() < key;
+    }
+
     void copy_path_to_root(Node_base *v, Pointer ptr, bool ptr_left) {
         Node_base *new_v;
         while(v != nullptr) {
@@ -250,11 +259,11 @@ private: // method of perset
     }
 
     Node_base* find_Impl(Node_base *v, T const& key) {
-        if (v->get_data() < key) {
+        if (less_keys(v, key)) {
             if (v->right)
                 return find_Impl(v->right.get(), key);
             else return v;
-        } else if (v->get_data() > key) {
+        } else if (!less_keys(v, key)) {
             if (v->left)
                 return find_Impl(v->left.get(), key);
             else return v;
@@ -315,7 +324,7 @@ private: // method of perset
         // change version subtree, so change root end_node
         Node_base *ret = new Node(data);
         Pointer ptr = Pointer(ret);
-        copy_path_to_root(v, ptr, ptr->get_data() < v->get_data());
+        copy_path_to_root(v, ptr, less_keys(ptr.get(), v));
         return ret;
     }
 

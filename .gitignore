@@ -2,8 +2,10 @@
 *.png
 *.sh
 *.user
+*.cbp
 **/CMakeFiles/**
 **/Makefile
 **/CMakeCache.txt
 **/cmake_install.cmake
 /cpp_course/**/gtest
+**/build-*/**
