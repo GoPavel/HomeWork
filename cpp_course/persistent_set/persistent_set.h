@@ -180,8 +180,13 @@ public: // method of perset
         } else {
             // insert and change root and end
             v = insert_Impl(v, element);
+<<<<<<< HEAD
             ++_size;
             return std::make_pair(iterator(v), true);
+=======
+            return std::make_pair(iterator(v), true);
+            ++_size;
+>>>>>>> origin/master
         }
     }
 
