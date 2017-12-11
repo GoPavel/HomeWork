@@ -156,7 +156,10 @@ public: // method of perset
     persistent_set& operator=(persistent_set const& other) {
         root = other.root;
         end_node = other.end_node;
+<<<<<<< HEAD
         _size = other._size;
+=======
+>>>>>>> origin/master
         return *this;
     }
 
@@ -181,7 +184,10 @@ public: // method of perset
             // insert and change root and end
             v = insert_Impl(v, element);
             return std::make_pair(iterator(v), true);
+<<<<<<< HEAD
             ++_size;
+=======
+>>>>>>> origin/master
         }
     }
 
