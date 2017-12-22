@@ -1,5 +1,13 @@
 #ifndef PERSISTENT_SET_HEADER
 #define PERSISTENT_SET_HEADER
+
+#define MY_DEBUG
+#ifdef MY_DEBUG
+#include <iostream>
+//#define TRACK_DESTRUCTOR
+#define DEBUG_FUNCTION
+#endif
+
 #include <memory>
 #include <cassert>
 #include "smart_pointers/linked_ptr.h"
@@ -43,7 +51,11 @@ private: // struct
         virtual Node_base* copy() {
             return new Node_base(*this);
         }
-        virtual ~Node_base() = default;
+        virtual ~Node_base() {
+#ifdef TRACK_DESTRUCTOR
+            std::cout << "Node del: " << std::endl;
+#endif
+        }
 
         virtual T const& get_data() {
             assert(false && "you tried get data from node_base");
@@ -67,7 +79,11 @@ private: // struct
             return new Node(*this);
         }
 
-        ~Node() override = default;
+        ~Node() override {
+#ifdef TRACK_DESTRUCTOR
+            std::cout << "Node del: " << std::endl;
+#endif
+        }
 
         T const& get_data() override {
             return data;
@@ -175,11 +191,14 @@ public: // method of perset
 * -------------------------------*/
     std::pair<iterator, bool> insert(T const& element) {
         Node_base *v = find_Impl(root.get(), element);
+        std::cout << "find_impl" << std::endl;
         if ( !is_end(v) && v->get_data() == element) {
             return std::make_pair(iterator(v), false);
         } else {
             // insert and change root and end
+            std::cout << "insert and change root and end" << std::endl;
             v = insert_Impl(v, element);
+            std::cout << "end insert" << std::endl;
             ++_size;
             return std::make_pair(iterator(v), true);
         }
@@ -221,6 +240,16 @@ public: // method of perset
         return a.root != b.root;
     }
 
+#ifdef DEBUG_FUNCTION
+    void print_all_element() {
+        std::cout << "Current tree: ";
+        print_rec(root.get());
+        std::cout << std::endl;
+        return;
+    }
+#endif
+
+
 private: // method of perset
     // copy path
     // v => node old branch, which first copy
@@ -240,13 +269,28 @@ private: // method of perset
         else return v->get_data() < key;
     }
 
+#ifdef DEBUG_FUNCTION
+    void print_rec(Node_base *v) {
+        if (v != nullptr) {
+            if (is_end(v))
+                std::cout << "end ";
+            else std::cout << v->get_data() << " ";
+            print_rec(v->left.get());
+            print_rec(v->right.get());
+        }
+        return;
+    }
+#endif
+
     void copy_path_to_root(Node_base *v, Pointer ptr, bool ptr_left) {
+        std::cout << "some iter of copy_path: "<< std::endl;
         Node_base *new_v;
         while(v != nullptr) {
             new_v = v->copy();
             if (ptr_left)
                 new_v->left = ptr;
-            else new_v->right = ptr;
+            else
+                new_v->right = ptr;
             ptr->parent = new_v;
             ptr_left = (v->parent && v->parent->left && v->parent->left.get() == v);
             ptr = Pointer(new_v);
@@ -322,10 +366,11 @@ private: // method of perset
 
     Node_base* insert_Impl(Node_base* v, T const& data) {
         // change version subtree, so change root end_node
-        Node_base *ret = new Node(data);
-        Pointer ptr = Pointer(ret);
+        Pointer ptr = Pointer(new Node(data));
+        std::cout << "start insert, and copy path..." << std::endl;
         copy_path_to_root(v, ptr, less_keys(ptr.get(), v));
-        return ret;
+        std::cout << "end copy path." << std::endl;
+        return ptr.get();
     }
 
     static Node_base* next_node(Node_base *v) {
