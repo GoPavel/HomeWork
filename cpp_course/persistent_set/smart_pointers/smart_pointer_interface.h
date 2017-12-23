@@ -16,6 +16,8 @@ public:
 
     virtual bool operator!=(smart_pointer_interface const& other) = 0;
 
+//    static void swap(smart_pointer_interface &a, smart_pointer_interface &b);
+
     virtual ~smart_pointer_interface() = 0;
 };
 

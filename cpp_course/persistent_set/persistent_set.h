@@ -5,7 +5,7 @@
 #ifdef MY_DEBUG
 #include <iostream>
 //#define TRACK_DESTRUCTOR
-#define DEBUG_FUNCTION
+#define HONEST_SIZE
 #endif
 
 #include <memory>
@@ -13,7 +13,7 @@
 #include "smart_pointers/linked_ptr.h"
 #include "smart_pointers/shared_ptr.h"
 
-//Requirements for T:
+///Requirements for type T:
 //DefaultConstructible => not necessary
 //Destructible
 //LessThanComparable
@@ -25,102 +25,103 @@ class persistent_set;
 
 template <typename T, template<typename> class Memory_manager_ptr = std::shared_ptr>
 class persistent_set {
-private: // struct
-    struct Node_base;
-    typedef Memory_manager_ptr<Node_base> Pointer;
-    struct Node_base {
+private: // nested structs
+    struct Node;
+    typedef Memory_manager_ptr<Node> Pointer;
+    struct Node {
     public: // members
         Pointer left, right;
-        Node_base *parent;
     public: // method
-        Node_base(Pointer const &left, Pointer const &right, Node_base* parent):
-            left(left), right(right), parent(parent) { }
+        Node(Pointer const &left, Pointer const &right):
+            left(left), right(right) { }
 
-        Node_base():
-            Node_base(nullptr, nullptr, nullptr) { }
+        Node():
+            Node(nullptr, nullptr) { }
 
-        Node_base(Node_base const& other):
-            Node_base(other.left, other.right, other.parent) { }
+        Node(Node const& other):
+            Node(other.left, other.right) { }
 
-        void set_field(Pointer left_sptr, Pointer right_sptr, Node_base *parent_ptr) {
-            left = left_sptr;
-            right = right_sptr;
-            parent = parent_ptr;
+        virtual Node* copy() const {
+            return new Node(*this);
         }
 
-        virtual Node_base* copy() {
-            return new Node_base(*this);
-        }
-        virtual ~Node_base() {
+        virtual bool is_end() const { return true; }
+
+        virtual ~Node() {
 #ifdef TRACK_DESTRUCTOR
-            std::cout << "Node del: " << std::endl;
+            std::cout << "Node del: end" << std::endl;
 #endif
         }
 
-        virtual T const& get_data() {
+        virtual T const& get_data() const {
             assert(false && "you tried get data from node_base");
         }
     };
 
-    struct Node: public Node_base {
+    struct Node_with_data: public Node {
     public: // members
         T data;
     public: //method
-        Node(T const& data, Pointer const &left, Pointer const &right, Node_base *parent):
-             Node_base(left, right, parent), data(data) { }
+        Node_with_data(T const& data, Pointer const &left, Pointer const &right):
+             Node(left, right), data(data) { }
 
-        Node(T const& data):
-            Node_base(), data(data) {}
+        Node_with_data(T const& data):
+            Node(), data(data) {}
 
-        Node(Node const &other):
-            Node_base(other), data(other.data) { }
+        Node_with_data(Node_with_data const &other):
+            Node(other), data(other.data) { }
 
-        virtual Node_base* copy() override {
-            return new Node(*this);
+        virtual Node* copy() const override {
+            return new Node_with_data(*this);
         }
 
-        ~Node() override {
+        virtual bool is_end() const override { return false; }
+
+        ~Node_with_data() override {
 #ifdef TRACK_DESTRUCTOR
-            std::cout << "Node del: " << std::endl;
+            std::cout << "Node del: " << data << " and base: ";
 #endif
         }
 
-        T const& get_data() override {
+        T const& get_data() const override {
             return data;
         }
     };
 
-public: // struct
+   void swap_nodes(Node* a, Node *b) {
+       assert(!(a->is_end() || b->is_end()));
+       std::swap(static_cast<Node_with_data*>(a)->data, static_cast<Node_with_data*>(b)->data);
+   }
+
+public: // nested structs
 
     struct my_iterator {
         friend class persistent_set;
 
     private: // members of iterator
-        Node_base *ptr_node;
+        Node *ptr_node, *root;
     public: // method of iterator
         my_iterator():
-            ptr_node(nullptr) { }
+            ptr_node(nullptr), root(nullptr) { }
 
         my_iterator(my_iterator const &other):
-            ptr_node(other.ptr_node) { }
-
-        my_iterator(Node_base *v):
-            ptr_node(v) { }
+            ptr_node(other.ptr_node), root(other.root) { }
 
         my_iterator& operator=(my_iterator const &other) {
             ptr_node = other.ptr_node;
+            root = other.root;
             return *this;
         }
 
         ~my_iterator() = default;
 
         T operator*() const {
-            assert(!is_end(ptr_node));
+            assert(!ptr_node->is_end());
             return ptr_node->get_data();
         }
 
         my_iterator& operator++() {
-            ptr_node = next_node(ptr_node);
+            ptr_node = next_node(ptr_node, root);
             return *this;
         }
         my_iterator operator++(int) {
@@ -130,40 +131,40 @@ public: // struct
         }
 
         my_iterator& operator--() {
-            ptr_node = prev_node(ptr_node);
+            ptr_node = prev_node(ptr_node, root);
             return *this;
         }
         my_iterator operator--(int) {
             my_iterator temp = (*this);
-            ++(*this);
+            --(*this);
             return temp;
         }
 
         friend bool operator==(my_iterator const &a, my_iterator const &b) {
-            return  a.ptr_node == a.ptr_node;
+            return  a.ptr_node == b.ptr_node;
         }
 
         friend bool operator!=(my_iterator const &a, my_iterator const &b) {
-            return a.ptr_node != a.ptr_node;
+            return a.ptr_node != b.ptr_node;
         }
 
-        // typedef std::ptrdiff_t difference_type;
-        // typedef T value_type;
-        // typedef T* pointer;
-        // typedef T& reference;
-        // typedef std::bidirectional_iterator_tag iterator_category;
+        friend void swap(my_iterator &a, my_iterator &b) {
+            std::swap(a.ptr_node, b.ptr_node);
+            std::swap(a.root, b.root);
+        }
+
+    private: // method of iterator
+        my_iterator(Node *v, Node *root_v):
+            ptr_node(v), root(root_v) { }
     };
     typedef my_iterator iterator;
-    //typedef my_iterator const_iterator;
-    // typedef std::reverse_iterator<iterator> reverse_iterator;
-    // typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
 private: // members of perset
-    Pointer root, end_node;
+    Pointer root;
+    Node* end_node;
     size_t _size;
 public: // method of perset
     persistent_set(): _size(0) {
-        end_node = Pointer(new Node_base());
-        root = end_node;
+        root = Pointer(end_node = new Node());
     }
 
     persistent_set(persistent_set const &other):
@@ -178,11 +179,11 @@ public: // method of perset
 
     ~persistent_set() = default;
 
-    iterator find(T const &element) {
-        Node_base *v = find_Impl(root.get(), element);
-        if (!is_end(v) && v->get_data() == element)
-            return iterator(v);
-        else return iterator(end_node.get());
+    iterator find(T const &element) const {
+        Node* prediction = find_impl(root.get(), element);
+        if (comp(prediction, element) == 0)
+            return iterator(prediction, root.get());
+        else return iterator(end_node, root.get());
     }
 
 /*--------------------------------
@@ -190,46 +191,100 @@ public: // method of perset
 * Old version will delete, if you didn't copy before insert
 * -------------------------------*/
     std::pair<iterator, bool> insert(T const& element) {
-        Node_base *v = find_Impl(root.get(), element);
-        std::cout << "find_impl" << std::endl;
-        if ( !is_end(v) && v->get_data() == element) {
-            return std::make_pair(iterator(v), false);
-        } else {
-            // insert and change root and end
-            std::cout << "insert and change root and end" << std::endl;
-            v = insert_Impl(v, element);
-            std::cout << "end insert" << std::endl;
+        Node* prediction = find_impl(root.get(), element);
+        if (comp(prediction, element) == 0)
+            return std::make_pair(iterator(prediction, root.get()), false);
+        else {
+            Node* last;
+            Pointer new_root(copy_path(root.get(), prediction, last));
+            assert(comp(last, prediction) == 0);
+            Node *new_node = new Node_with_data(element);
+            if (comp(last, element) == -1)
+                last->right = Pointer(new_node);
+            else
+                last->left = Pointer(new_node);
+            root = new_root;
+            end_node = max_node(root.get());
             ++_size;
-            return std::make_pair(iterator(v), true);
+            return std::make_pair(iterator(new_node, root.get()), true);
         }
     }
 
     void erase(iterator const& iter) {
-        assert(iter.ptr_node);
-        assert(is_end(iter.ptr_node));
-        erase_Impl(iter.ptr_node);
+        assert(iter.ptr_node != end_node);
+        Node* target_node = iter.ptr_node; // this node must die
+        Node* copy_target_node = nullptr; // it's copy in new branch
+        Node* new_root = nullptr; // it's root new branch
+        Node* instead = nullptr; // node which swap with target
+        Node* copy_instead = nullptr; // instead in new branch
+        Node* copy_target_node_left; // it's left target's son in new branch    | start of second part path
+        Node* copy_target_node_right; // it's right target's son in new branch  |
+        Node* last_right_parent = nullptr; //|
+        Node* last_left_parent = nullptr; // | -> for find_rot
+        Node* last_parent = nullptr; //      |
+        Node* last_node = nullptr; // for copy_path
+        if(target_node->left) {
+            new_root = copy_path(root.get(), target_node, copy_target_node);
+            instead = max_node(target_node->left.get());
+            copy_target_node_left = copy_path(target_node->left.get(), instead, copy_instead);
+            copy_target_node->left = Pointer(copy_target_node_left);
+            find_rot(copy_target_node, copy_instead, last_right_parent, last_left_parent, last_parent);
+            swap_nodes(copy_target_node, copy_instead);
+            if (last_left_parent != nullptr) {
+                assert(last_left_parent->right.get() == copy_instead);
+                last_left_parent->right = last_left_parent->right->left;
+            } else {
+                assert(copy_target_node->left.get() == copy_instead);
+                copy_target_node->left = copy_target_node->left->left;
+            }
+        } else if(target_node->right) {
+            new_root = copy_path(root.get(), target_node, copy_target_node);
+            instead = min_node(target_node->right.get());
+            copy_target_node_right = copy_path(target_node->right.get(), instead, copy_instead);
+            copy_target_node->right = Pointer(copy_target_node_right);
+            find_rot(copy_target_node, copy_instead, last_right_parent, last_left_parent, last_parent);
+            swap_nodes(copy_instead, copy_target_node);
+            if (last_right_parent != nullptr) {
+                assert(last_right_parent->left.get() == copy_instead);
+                last_right_parent->left = last_right_parent->left->right;
+            } else {
+                assert(copy_target_node->right.get() == copy_instead);
+                copy_target_node->right = copy_target_node->right->right;
+            }
+        } else {
+            find_rot(root.get(), target_node, last_right_parent, last_left_parent, last_parent);
+            assert(last_parent != nullptr);
+            new_root = copy_path(root.get(), last_parent, last_node);
+            if (last_parent == last_left_parent) {
+                last_node->right = nullptr;
+            } else {
+                last_node->left = nullptr;
+            }
+        }
+        root = Pointer(new_root);
+        end_node = max_node(new_root);
         --_size;
     }
 
-    bool empty() {
-        assert(root == end_node);
+    bool empty() const {
+        assert(root.get() == end_node);
         return _size == 0;
     }
 
-    size_t size() {
+    size_t size() const {
+#ifdef HONEST_SIZE
+        return honest_size(root.get()) - 1;
+#else
         return _size;
+#endif
     }
 
     iterator begin() const {
-        Node_base *v = root.get();
-        while (v->left) {
-            v = v->left.get();
-        }
-        return iterator(v);
+        return iterator(min_node(root.get()), root.get());
     }
 
     iterator end() const {
-        return iterator(end_node.get());
+        return iterator(end_node, root.get());
     }
 
     friend bool operator==(persistent_set const& a, persistent_set const& b) {
@@ -240,174 +295,151 @@ public: // method of perset
         return a.root != b.root;
     }
 
-#ifdef DEBUG_FUNCTION
-    void print_all_element() {
-        std::cout << "Current tree: ";
-        print_rec(root.get());
-        std::cout << std::endl;
-        return;
-    }
-#endif
 
+    friend void swap(persistent_set &a, persistent_set &b) {
+       Pointer::swap(a.root, b.root);
+       Pointer::swap(a.end_node, b.end_node);
+    }
+
+#ifdef MY_DEBUG
+     std::string to_string() const {
+         std::string message = " ";
+         message += "Current tree: ";
+         to_string_rec(root.get(), message);
+         message += "\n";
+         return message;
+     }
+#endif
 
 private: // method of perset
-    // copy path
-    // v => node old branch, which first copy
-    // ptr => node from new branch
-    static bool less_keys(Node_base *a, Node_base *b) { // a < b = true
-        assert(!is_end(a) || !is_end(b));
-        if (is_end(a)) // end is the biggest key
-            return false;
-        else if (is_end(b))
-            return true;
-        else return a->get_data() < b->get_data();
+
+/* comparator
+* -1 v.data < key (key is right)
+* 0 v.data = key
+* +1 v.data > key (key is left)
+*/
+    static int32_t comp(Node const *v, T const& key) {
+        if (v->is_end())
+            return 1;
+        else if (v->get_data() == key)
+            return 0;
+        else return (v->get_data() < key ? -1 : 1);
+    }
+    static int32_t comp(Node const *a, Node const *b) { // a < b = true
+        if (b->is_end())
+            return (a->is_end()? 0: -1);
+        else
+            return comp(a, b->get_data());
     }
 
-    static bool less_keys(Node_base *v, T const& key) { // a < b = true
-        if(is_end(v))
-            return false;
-        else return v->get_data() < key;
-    }
+#ifdef MY_DEBUG
+     void to_string_rec(Node *v, std::string &message) const {
+         if (v != nullptr) {
+             if (v->is_end())
+                 message += "end ";
+             else message += std::to_string(v->get_data()) + " ";
+             to_string_rec(v->left.get(), message);
+             to_string_rec(v->right.get(), message);
+         }
+         return;
+     }
 
-#ifdef DEBUG_FUNCTION
-    void print_rec(Node_base *v) {
-        if (v != nullptr) {
-            if (is_end(v))
-                std::cout << "end ";
-            else std::cout << v->get_data() << " ";
-            print_rec(v->left.get());
-            print_rec(v->right.get());
-        }
-        return;
-    }
+     size_t honest_size(Node *v) const {
+         if (v) {
+             return honest_size(v->left.get()) +
+                    honest_size(v->right.get()) + 1;
+         } else
+             return 0;
+     }
 #endif
 
-    void copy_path_to_root(Node_base *v, Pointer ptr, bool ptr_left) {
-        std::cout << "some iter of copy_path: "<< std::endl;
-        Node_base *new_v;
-        while(v != nullptr) {
-            new_v = v->copy();
-            if (ptr_left)
-                new_v->left = ptr;
-            else
-                new_v->right = ptr;
-            ptr->parent = new_v;
-            ptr_left = (v->parent && v->parent->left && v->parent->left.get() == v);
-            ptr = Pointer(new_v);
-            if (is_end(v))
-                end_node = ptr;
-            v = v->parent;
+    Node* find_impl(Node *v, T const& key) const {
+        switch(comp(v, key)) {
+        case(1): return (v->left? find_impl(v->left.get(), key) : v);
+        case(0): return v;
+        case(-1): return (v->right? find_impl(v->right.get(), key) : v);
         }
-        root = ptr;
+        assert(true && "fail in find_impl");
+    }
+
+/* return pointer on new_root
+* and pointer on last element of path -> last
+* pre: path must exist in tree */
+    Node* copy_path(Node *v, Node const *target, Node *(&last)) {
+        Node* v_copy = v->copy();
+        switch(comp(v, target)) {
+        case(0):
+            last = v_copy;
+            break;
+        case(1):
+            assert(v->left);
+            v_copy->left = Pointer(copy_path(v->left.get(), target, last));
+            break;
+        case(-1):
+            assert(v->right);
+            v_copy->right = Pointer(copy_path(v->right.get(), target, last));
+            break;
+        }
+        return v_copy;
+    }
+
+    static Node* min_node(Node *v) {
+        if (v->left)
+            return min_node(v->left.get());
+        else return v;
+    }
+
+    static Node* max_node(Node *v) {
+        if (v->right)
+            return max_node(v->right.get());
+        else return v;
+    }
+
+//pre: path must exist
+    static void find_rot(Node *v, Node *target, Node *(&last_right_parent), Node *(&last_left_parent), Node *(&last_parent)) {
+        switch(comp(v, target)) {
+        case(0):
+            return;
+        case(1):
+            assert(v->left);
+            last_right_parent = v;
+            last_parent = v;
+            find_rot(v->left.get(), target, last_right_parent, last_left_parent, last_parent);
+            break;
+        case(-1):
+            assert(v->right);
+            last_left_parent = v;
+            last_parent = v;
+            find_rot(v->right.get(), target, last_right_parent, last_left_parent, last_parent);
+            break;
+        }
         return;
     }
 
-    Node_base* find_Impl(Node_base *v, T const& key) {
-        if (less_keys(v, key)) {
-            if (v->right)
-                return find_Impl(v->right.get(), key);
-            else return v;
-        } else if (!less_keys(v, key)) {
-            if (v->left)
-                return find_Impl(v->left.get(), key);
-            else return v;
-        } else return v;
-    }
-
-    void erase_Impl(Node_base *deletable) {
-        Pointer deletable_Pointer(deletable); // for capture
-        // capture instead node, if we miss this pointer, then node'll delete.
-        Pointer instead_Pointer;// Pointer on new node, which replace deletable
-        bool instead_from_left;
-        if (deletable->left) {
-            instead_Pointer = Pointer(deletable->left->copy());
-            instead_from_left = true;
-        } else if (deletable->right) {
-            instead_Pointer = Pointer(deletable->right->copy());
-            instead_from_left = false;
-        } else {
-            instead_Pointer = nullptr;
-        }
-        copy_path_to_root( deletable->parent,
-                           instead_Pointer,
-        /*for deleteble*/ (deletable->parent == nullptr || deletable->parent->left == deletable_Pointer ? true : false ));
-
-        /// path to root is good; fix path to listerase_Impl
-
-        Pointer cur_deletable = deletable_Pointer, new_instead_Pointer;
-        bool new_instead_from_left;
-        while (instead_Pointer) {
-            // begin init instead node
-            if (instead_from_left) {
-                instead_Pointer->set_field(Pointer(nullptr), cur_deletable->right, cur_deletable->parent);
-                cur_deletable = cur_deletable->left;
-            } else {
-                instead_Pointer->set_field(cur_deletable->left, Pointer(nullptr), cur_deletable->parent);
-                cur_deletable = cur_deletable->right;
-            }
-            assert(!cur_deletable);
-            // choose new instead
-            if (cur_deletable->left) {
-                new_instead_Pointer = Pointer(cur_deletable->left->copy());
-                new_instead_from_left = true;
-            } else if (cur_deletable->right) {
-                new_instead_Pointer = Pointer(cur_deletable->right->copy());
-                new_instead_from_left = false;
-            } else {
-                new_instead_Pointer = Pointer(nullptr);
-            }
-            // end init instead_Pointer (connect instead -> new_instead)
-            (instead_from_left ? instead_Pointer->left : instead_Pointer->right) = new_instead_Pointer;
-            // transition to new state
-            instead_Pointer = new_instead_Pointer;
-            instead_from_left = new_instead_from_left;
-        }
-    }
-
-    Node_base* insert_Impl(Node_base* v, T const& data) {
-        // change version subtree, so change root end_node
-        Pointer ptr = Pointer(new Node(data));
-        std::cout << "start insert, and copy path..." << std::endl;
-        copy_path_to_root(v, ptr, less_keys(ptr.get(), v));
-        std::cout << "end copy path." << std::endl;
-        return ptr.get();
-    }
-
-    static Node_base* next_node(Node_base *v) {
+    static Node* next_node(Node *v, Node* root) {
         assert(v != nullptr);
-        Node_base *it = v;
-        if (it->right) {
-            it = it->right.get();
-            while (it->left) {
-                it = it->left.get();
-            }
-            return it;
+        assert(root != nullptr);
+        if (v->right) {
+            return min_node(v->right.get());
         } else {
-            while (it->parent && (it->parent->right.get() == it) ) {
-                it = it->parent;
-            }
-            return it->parent;
+            Node *last_left_parent = nullptr, *last_right_parent = nullptr, *last_parent = nullptr;
+            find_rot(root, v, last_right_parent, last_left_parent, last_parent);
+            assert(last_right_parent != nullptr);
+            return last_right_parent;
         }
     }
 
-    static Node_base* prev_node(Node_base *v) {
+    static Node* prev_node(Node *v, Node* root) {
         assert(v != nullptr);
-        Node_base *it = v;
-        if (it->left) {
-            while (it->right) {
-                it = it->right.get();
-            }
-            return it;
+        assert(root != nullptr);
+        if (v->left) {
+            return max_node(v->left.get());
         } else {
-            while ( it->parent && (it->parent->left.get() == it) ) {
-                it = it->parent;
-            }
-            return it->parent;
+            Node *last_left_parent, *last_right_parent, *last_parent = nullptr;
+            find_rot(root, v, last_right_parent, last_left_parent, last_parent);
+            assert(last_left_parent != nullptr);
+            return last_left_parent;
         }
-    }
-
-    static bool is_end(Node_base *node) {
-        return dynamic_cast<Node*>(node) == nullptr;
     }
 };
 
@@ -416,7 +448,7 @@ private: // method of perset
 * 1) test of time-life other element after operation. Because when you copy path your might lost root's control, and all old node'll delete.
 * 2) test of copy
 * NB) May be, you should make delay deleted old root
+* NB) May be, extension for find with predicate
 */
 
-///TODO add swap()
 ///TODO add rvalue
