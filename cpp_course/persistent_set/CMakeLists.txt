@@ -4,14 +4,13 @@ project(persistent_set)
 
 include_directories(${persistent_set_SOURCE_DIR})
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pedantic -Wall -Wextra -std=c++14 -fsanitize=address,undefined -fno-sanitize-recover -fstack-protector")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pedantic -Wall -Wextra -std=c++11 -fsanitize=address,undefined -fno-sanitize-recover -fstack-protector")
 
 add_executable(${PROJECT_NAME}
                                persistent_set.h
                                perset_testing.cpp
                                smart_pointers/linked_ptr.h
                                smart_pointers/shared_ptr.h
-                               smart_pointers/smart_pointer_interface.h
                                gtest/gtest-all.cc
                                gtest/gtest.h
                                gtest/gtest_main.cc)

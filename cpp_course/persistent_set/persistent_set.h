@@ -1,7 +1,7 @@
 #ifndef PERSISTENT_SET_HEADER
 #define PERSISTENT_SET_HEADER
 
-#define MY_DEBUG
+//#define MY_DEBUG
 #ifdef MY_DEBUG
 #include <iostream>
 //#define TRACK_DESTRUCTOR
@@ -10,11 +10,11 @@
 
 #include <memory>
 #include <cassert>
+#include <utility>
 #include "smart_pointers/linked_ptr.h"
 #include "smart_pointers/shared_ptr.h"
 
 ///Requirements for type T:
-//DefaultConstructible => not necessary
 //Destructible
 //LessThanComparable
 
@@ -32,20 +32,22 @@ private: // nested structs
     public: // members
         Pointer left, right;
     public: // method
-        Node(Pointer const &left, Pointer const &right):
-            left(left), right(right) { }
+        Node(Pointer const &left, Pointer const &right) noexcept
+            : left(left), right(right) { }
 
-        Node():
-            Node(nullptr, nullptr) { }
+        Node() noexcept
+            : Node(nullptr, nullptr) { }
 
-        Node(Node const& other):
-            Node(other.left, other.right) { }
+        Node(Node const& other) noexcept
+            : Node(other.left, other.right) { }
 
         virtual Node* copy() const {
             return new Node(*this);
         }
 
-        virtual bool is_end() const { return true; }
+        virtual bool is_end() const noexcept {
+            return true;
+        }
 
         virtual ~Node() {
 #ifdef TRACK_DESTRUCTOR
@@ -62,20 +64,23 @@ private: // nested structs
     public: // members
         T data;
     public: //method
-        Node_with_data(T const& data, Pointer const &left, Pointer const &right):
-             Node(left, right), data(data) { }
+        Node_with_data(T const& data, Pointer const &left, Pointer const &right)
+            noexcept(noexcept(T(data)))
+            : Node(left, right), data(data) { }
 
-        Node_with_data(T const& data):
-            Node(), data(data) {}
+        Node_with_data(T const& data) noexcept(noexcept(T(data)))
+            : Node(), data(data) {}
 
-        Node_with_data(Node_with_data const &other):
-            Node(other), data(other.data) { }
+        Node_with_data(Node_with_data const &other) noexcept(noexcept(T(data)))
+            : Node(other), data(other.data) { }
 
         virtual Node* copy() const override {
             return new Node_with_data(*this);
         }
 
-        virtual bool is_end() const override { return false; }
+        virtual bool is_end() const noexcept override {
+            return false;
+        }
 
         ~Node_with_data() override {
 #ifdef TRACK_DESTRUCTOR
@@ -88,7 +93,7 @@ private: // nested structs
         }
     };
 
-   void swap_nodes(Node* a, Node *b) {
+   static void swap_nodes(Node* a, Node *b) {
        assert(!(a->is_end() || b->is_end()));
        std::swap(static_cast<Node_with_data*>(a)->data, static_cast<Node_with_data*>(b)->data);
    }
@@ -101,13 +106,12 @@ public: // nested structs
     private: // members of iterator
         Node *ptr_node, *root;
     public: // method of iterator
-        my_iterator():
-            ptr_node(nullptr), root(nullptr) { }
+        my_iterator() noexcept : ptr_node(nullptr), root(nullptr) { }
 
-        my_iterator(my_iterator const &other):
+        my_iterator(my_iterator const &other) noexcept :
             ptr_node(other.ptr_node), root(other.root) { }
 
-        my_iterator& operator=(my_iterator const &other) {
+        my_iterator& operator=(my_iterator const &other) noexcept {
             ptr_node = other.ptr_node;
             root = other.root;
             return *this;
@@ -115,47 +119,47 @@ public: // nested structs
 
         ~my_iterator() = default;
 
-        T operator*() const {
+        T operator*() const noexcept {
             assert(!ptr_node->is_end());
             return ptr_node->get_data();
         }
 
-        my_iterator& operator++() {
+        my_iterator& operator++() noexcept {
             ptr_node = next_node(ptr_node, root);
             return *this;
         }
-        my_iterator operator++(int) {
+        my_iterator operator++(int) noexcept {
             my_iterator temp = (*this);
             ++(*this);
             return temp;
         }
 
-        my_iterator& operator--() {
+        my_iterator& operator--() noexcept {
             ptr_node = prev_node(ptr_node, root);
             return *this;
         }
-        my_iterator operator--(int) {
+        my_iterator operator--(int) noexcept {
             my_iterator temp = (*this);
             --(*this);
             return temp;
         }
 
-        friend bool operator==(my_iterator const &a, my_iterator const &b) {
+        friend bool operator==(my_iterator const &a, my_iterator const &b) noexcept {
             return  a.ptr_node == b.ptr_node;
         }
 
-        friend bool operator!=(my_iterator const &a, my_iterator const &b) {
+        friend bool operator!=(my_iterator const &a, my_iterator const &b) noexcept {
             return a.ptr_node != b.ptr_node;
         }
 
-        friend void swap(my_iterator &a, my_iterator &b) {
+        friend void swap(my_iterator &a, my_iterator &b) noexcept {
             std::swap(a.ptr_node, b.ptr_node);
             std::swap(a.root, b.root);
         }
 
     private: // method of iterator
-        my_iterator(Node *v, Node *root_v):
-            ptr_node(v), root(root_v) { }
+        my_iterator(Node *v, Node *root_v) noexcept
+            : ptr_node(v), root(root_v) { }
     };
     typedef my_iterator iterator;
 private: // members of perset
@@ -163,23 +167,33 @@ private: // members of perset
     Node* end_node;
     size_t _size;
 public: // method of perset
-    persistent_set(): _size(0) {
+    persistent_set() noexcept : _size(0) {
         root = Pointer(end_node = new Node());
     }
 
-    persistent_set(persistent_set const &other):
-        root(other.root), end_node(other.end_node), _size(other._size) { }
+    persistent_set(persistent_set const &other) noexcept
+        : root(other.root), end_node(other.end_node), _size(other._size) { }
 
-    persistent_set& operator=(persistent_set const& other) {
+    persistent_set& operator=(persistent_set const& other) noexcept {
         root = other.root;
         end_node = other.end_node;
         _size = other._size;
         return *this;
     }
 
+    persistent_set(persistent_set &&other)
+        : root(std::move(other.root)), end_node(std::move(other.end_node)), _size(std::move(other._size)) { }
+
+    persistent_set& operator=(persistent_set &&other) {
+        root = std::move(other.root);
+        end_node = std::move(other.end_node);
+        _size = std::move(_size);
+        return *this;
+    }
+
     ~persistent_set() = default;
 
-    iterator find(T const &element) const {
+    iterator find(T const &element) const noexcept {
         Node* prediction = find_impl(root.get(), element);
         if (comp(prediction, element) == 0)
             return iterator(prediction, root.get());
@@ -266,12 +280,12 @@ public: // method of perset
         --_size;
     }
 
-    bool empty() const {
+    bool empty() const noexcept {
         assert(root.get() == end_node);
         return _size == 0;
     }
 
-    size_t size() const {
+    size_t size() const noexcept {
 #ifdef HONEST_SIZE
         return honest_size(root.get()) - 1;
 #else
@@ -279,24 +293,24 @@ public: // method of perset
 #endif
     }
 
-    iterator begin() const {
+    iterator begin() const noexcept {
         return iterator(min_node(root.get()), root.get());
     }
 
-    iterator end() const {
+    iterator end() const noexcept {
         return iterator(end_node, root.get());
     }
 
-    friend bool operator==(persistent_set const& a, persistent_set const& b) {
+    friend bool operator==(persistent_set const& a, persistent_set const& b) noexcept {
         return a.root == b.root;
     }
 
-    friend bool operator!=(persistent_set const& a, persistent_set const& b) {
+    friend bool operator!=(persistent_set const& a, persistent_set const& b) noexcept {
         return a.root != b.root;
     }
 
 
-    friend void swap(persistent_set &a, persistent_set &b) {
+    friend void swap(persistent_set &a, persistent_set &b) noexcept {
        Pointer::swap(a.root, b.root);
        Pointer::swap(a.end_node, b.end_node);
     }
@@ -318,14 +332,14 @@ private: // method of perset
 * 0 v.data = key
 * +1 v.data > key (key is left)
 */
-    static int32_t comp(Node const *v, T const& key) {
+    static int32_t comp(Node const *v, T const& key) noexcept {
         if (v->is_end())
             return 1;
         else if (v->get_data() == key)
             return 0;
         else return (v->get_data() < key ? -1 : 1);
     }
-    static int32_t comp(Node const *a, Node const *b) { // a < b = true
+    static int32_t comp(Node const *a, Node const *b) noexcept { // a < b = true
         if (b->is_end())
             return (a->is_end()? 0: -1);
         else
@@ -344,7 +358,7 @@ private: // method of perset
          return;
      }
 
-     size_t honest_size(Node *v) const {
+     size_t honest_size(Node *v) const noexcept {
          if (v) {
              return honest_size(v->left.get()) +
                     honest_size(v->right.get()) + 1;
@@ -353,7 +367,7 @@ private: // method of perset
      }
 #endif
 
-    Node* find_impl(Node *v, T const& key) const {
+    Node* find_impl(Node *v, T const& key) const noexcept {
         switch(comp(v, key)) {
         case(1): return (v->left? find_impl(v->left.get(), key) : v);
         case(0): return v;
@@ -383,20 +397,21 @@ private: // method of perset
         return v_copy;
     }
 
-    static Node* min_node(Node *v) {
+    static Node* min_node(Node *v) noexcept {
         if (v->left)
             return min_node(v->left.get());
         else return v;
     }
 
-    static Node* max_node(Node *v) {
+    static Node* max_node(Node *v) noexcept {
         if (v->right)
             return max_node(v->right.get());
         else return v;
     }
 
 //pre: path must exist
-    static void find_rot(Node *v, Node *target, Node *(&last_right_parent), Node *(&last_left_parent), Node *(&last_parent)) {
+    static void find_rot(Node *v, Node *target,
+                         Node *(&last_right_parent), Node *(&last_left_parent), Node *(&last_parent)) noexcept {
         switch(comp(v, target)) {
         case(0):
             return;
@@ -416,7 +431,7 @@ private: // method of perset
         return;
     }
 
-    static Node* next_node(Node *v, Node* root) {
+    static Node* next_node(Node *v, Node* root) noexcept {
         assert(v != nullptr);
         assert(root != nullptr);
         if (v->right) {
@@ -429,7 +444,7 @@ private: // method of perset
         }
     }
 
-    static Node* prev_node(Node *v, Node* root) {
+    static Node* prev_node(Node *v, Node* root) noexcept {
         assert(v != nullptr);
         assert(root != nullptr);
         if (v->left) {
@@ -447,8 +462,4 @@ private: // method of perset
 /*
 * 1) test of time-life other element after operation. Because when you copy path your might lost root's control, and all old node'll delete.
 * 2) test of copy
-* NB) May be, you should make delay deleted old root
-* NB) May be, extension for find with predicate
 */
-
-///TODO add rvalue
