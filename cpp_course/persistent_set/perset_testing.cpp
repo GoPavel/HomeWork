@@ -13,7 +13,7 @@ template class shared_ptr<int>;
 
 template class linked_ptr<int>;
 
-//#define TEST_SHARED_PTR
+#define TEST_SHARED_PTR
 #ifdef TEST_SHARED_PTR
 TEST(correctness, my_shared_ptr) {
     {
@@ -140,6 +140,7 @@ template class persistent_set<int>;
 template class persistent_set<int, shared_ptr>;
 template class persistent_set<int, linked_ptr>;
 
+#define TEST_PERSET
 typedef persistent_set<int, linked_ptr> perset;
 
 inline void random_perset(perset &a, size_t size_pull) {
@@ -156,7 +157,6 @@ inline void random_perset(perset &a, size_t size_pull) {
     }
 }
 
-#define TEST_PERSET
 #ifdef TEST_PERSET
 
 TEST(correctness, default_constructor_dectructor) {

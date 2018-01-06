@@ -1,11 +1,11 @@
 #ifndef PERSISTENT_SET_HEADER
 #define PERSISTENT_SET_HEADER
 
-//#define MY_DEBUG
+#define MY_DEBUG
 #ifdef MY_DEBUG
 #include <iostream>
 //#define TRACK_DESTRUCTOR
-#define HONEST_SIZE
+//#define HONEST_SIZE
 #endif
 
 #include <memory>

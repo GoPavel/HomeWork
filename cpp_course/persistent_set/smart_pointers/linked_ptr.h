@@ -1,13 +1,12 @@
 #ifndef LINKED_PTR_H
 #define LINKED_PTR_H
-#include "smart_pointer_interface.h"
 
 template<typename DATA_TYPE>
 class linked_ptr {
 private: /// member
     DATA_TYPE* data_ptr;
-    mutable linked_ptr* next;
-    mutable linked_ptr* prev;
+    mutable linked_ptr const* next;
+    mutable linked_ptr const* prev;
 public: /// method
     linked_ptr() noexcept
         : data_ptr(nullptr), next(nullptr), prev(nullptr) { }
@@ -21,7 +20,7 @@ public: /// method
     linked_ptr(linked_ptr const &other) noexcept
         : data_ptr(other.data_ptr), next(nullptr) {
         if (data_ptr) {
-            prev = const_cast<linked_ptr*>(&other);
+            prev = &other;
             other.next = this;
         } else {
             prev = nullptr;

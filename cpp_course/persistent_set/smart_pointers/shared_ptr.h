@@ -1,6 +1,5 @@
 #ifndef SHARED_PTR_H
 #define SHARED_PTR_H
-#include "smart_pointer_interface.h"
 #include <utility>
 
 template<typename DATA_TYPE>
