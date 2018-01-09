@@ -134,6 +134,25 @@ TEST(correctness, my_linked_ptr) {
         b = b;
         EXPECT_EQ(bool(b), false);
     }
+    {
+        typedef linked_ptr<int> lp;
+        lp a2;
+        lp a0(new int(6));
+        lp a1(a0);
+        a2 = a1;
+        lp b1(a1);
+    }
+    {
+        typedef linked_ptr<int> lp;
+        lp a2;
+        {
+           lp a0(new int(7));
+           lp a1(a0);
+           a2 = a1;
+           lp b1(a1);
+        }
+        (*a2) = 20;
+    }
 }
 #endif
 template class persistent_set<int>;

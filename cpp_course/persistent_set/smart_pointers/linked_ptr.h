@@ -17,12 +17,26 @@ public: /// method
     linked_ptr(DATA_TYPE *data_ptr) noexcept
         : data_ptr(data_ptr), next(nullptr), prev(nullptr) { }
 
+//    linked_ptr(linked_ptr const &other) noexcept
+//        : data_ptr(other.data_ptr), next(nullptr) {
+//        if (data_ptr) {
+//            prev = &other;
+//            other.next = this;
+//        } else {
+//            prev = nullptr;
+//        }
+//    }
+
     linked_ptr(linked_ptr const &other) noexcept
-        : data_ptr(other.data_ptr), next(nullptr) {
+        : data_ptr(other.data_ptr) {
         if (data_ptr) {
             prev = &other;
+            next = other.next;
+            if (other.next)
+                other.next->prev = this;
             other.next = this;
         } else {
+            next = nullptr;
             prev = nullptr;
         }
     }
@@ -52,7 +66,7 @@ public: /// method
         return data_ptr != nullptr;
     }
 
-    DATA_TYPE& operator*() const noexcept {
+    DATA_TYPE& operator* () const noexcept {
         return *data_ptr;
     }
 

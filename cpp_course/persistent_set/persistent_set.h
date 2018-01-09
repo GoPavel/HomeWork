@@ -459,7 +459,3 @@ private: // method of perset
 };
 
 #endif //PERSISTENT_SET_HEADER
-/*
-* 1) test of time-life other element after operation. Because when you copy path your might lost root's control, and all old node'll delete.
-* 2) test of copy
-*/
