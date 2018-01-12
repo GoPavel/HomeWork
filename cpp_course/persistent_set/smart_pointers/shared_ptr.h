@@ -52,7 +52,7 @@ public: /// method
         remove_binding();
     }
 
-    operator bool() const noexcept {
+    explicit operator bool() const noexcept {
         return data_ptr != nullptr;
     }
 
