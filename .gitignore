@@ -1,6 +1,5 @@
 *.jpg
 *.png
-*.sh
 *.user
 *.cbp
 **/CMakeFiles/**
