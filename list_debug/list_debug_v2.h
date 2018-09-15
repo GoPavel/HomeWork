@@ -1,3 +1,4 @@
+// It's unstable version with shared_ptr. Do not touch it!
 #ifndef LIST_DEBUG_H
 #define LIST_DEBUG_H
 #include <vector>

@@ -1,3 +1,4 @@
+// It's version with vetor in node. It's bad, because isn't exception safety.
 #ifndef LIST_DEBUG_H
 #define LIST_DEBUG_H
 #include <vector>

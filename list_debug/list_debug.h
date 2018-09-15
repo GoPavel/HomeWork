@@ -1,3 +1,4 @@
+// It's stable and major version.
 #ifndef LIST_DEBUG_H
 #define LIST_DEBUG_H
 #include <vector>
